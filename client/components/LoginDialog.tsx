@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import Link from "next/link";
 
 export function LoginDialog() {
    const [open, setOpen] = useState(false);
@@ -54,7 +55,11 @@ export function LoginDialog() {
             <DialogHeader>
                <DialogTitle>Sign in to ShopEase</DialogTitle>
                <DialogDescription>
-                  Enter your account details to continue.
+                  Enter your account details to continue. If admin, click{" "}
+                  <Link href="/admin" className="underline text-blue-400">
+                     here
+                  </Link>
+                  .
                </DialogDescription>
             </DialogHeader>
 

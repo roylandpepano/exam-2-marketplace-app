@@ -12,6 +12,7 @@ import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import LoginDialog from "@/components/LoginDialog";
 import RegisterDialog from "@/components/RegisterDialog";
 
@@ -19,6 +20,9 @@ export function Navbar() {
    const { logout, isLoggedIn } = useAuth();
    const { items } = useCart();
    const router = useRouter();
+   const pathname = usePathname();
+
+   if (pathname?.startsWith("/admin")) return null;
 
    const cartCount = items.length;
 
