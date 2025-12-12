@@ -4,6 +4,7 @@ import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
+import { PayPalProvider } from "@/contexts/PayPalContext";
 import ClientToaster from "@/components/ClientToaster";
 
 const geistSans = Geist({
@@ -33,11 +34,13 @@ export default function RootLayout({
          >
             <AuthProvider>
                <CartProvider>
-                  <Navbar />
-                  <main className="min-h-screen bg-gray-50 dark:bg-black">
-                     {children}
-                  </main>
-                  <ClientToaster />
+                  <PayPalProvider>
+                     <Navbar />
+                     <main className="min-h-screen bg-gray-50 dark:bg-black">
+                        {children}
+                     </main>
+                     <ClientToaster />
+                  </PayPalProvider>
                </CartProvider>
             </AuthProvider>
          </body>

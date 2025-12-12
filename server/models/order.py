@@ -4,20 +4,20 @@ from enum import Enum
 
 
 class OrderStatus(str, Enum):
-    PENDING = 'pending'
-    CONFIRMED = 'confirmed'
-    PROCESSING = 'processing'
-    SHIPPED = 'shipped'
-    DELIVERED = 'delivered'
-    CANCELLED = 'cancelled'
-    REFUNDED = 'refunded'
+    PENDING = 'Pending'
+    CONFIRMED = 'Confirmed'
+    PROCESSING = 'Processing'
+    SHIPPED = 'Shipped'
+    DELIVERED = 'Delivered'
+    CANCELLED = 'Cancelled'
+    REFUNDED = 'Refunded'
 
 
 class PaymentStatus(str, Enum):
-    PENDING = 'pending'
-    PAID = 'paid'
-    FAILED = 'failed'
-    REFUNDED = 'refunded'
+    PENDING = 'Pending'
+    PAID = 'Paid'
+    FAILED = 'Failed'
+    REFUNDED = 'Refunded'
 
 
 class Order(db.Model):

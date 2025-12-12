@@ -24,6 +24,7 @@ interface OrderItem {
 
 interface Order {
    id: string;
+   order_number?: string;
    userId: string;
    items: OrderItem[];
    total: number;
@@ -51,7 +52,7 @@ export default function OrderDetailsPage() {
             const res = await api.getMyOrders();
             const allOrders = res?.orders || [];
             const srv = allOrders.find(
-               (o: any) => String(o.id) === String(orderId)
+               (o: any) => String(o.order_number) === String(orderId)
             );
 
             if (!srv) {
@@ -61,6 +62,9 @@ export default function OrderDetailsPage() {
 
             const mapped: Order = {
                id: String(srv.id),
+               order_number: String(
+                  srv.order_number || srv.order_number || srv.id
+               ),
                userId: String(srv.user_id),
                items: (srv.items || []).map((it: any) => ({
                   id: String(it.id),
@@ -150,20 +154,20 @@ export default function OrderDetailsPage() {
                      {/* Status steps: confirmed -> processing -> shipped -> delivered */}
                      {(() => {
                         const steps = [
-                           { key: "confirmed", label: "Confirmed" },
-                           { key: "processing", label: "Processing" },
-                           { key: "shipped", label: "In Transit" },
-                           { key: "delivered", label: "Delivered" },
+                           { key: "Confirmed", label: "Confirmed" },
+                           { key: "Processing", label: "Processing" },
+                           { key: "Shipped", label: "In Transit" },
+                           { key: "Delivered", label: "Delivered" },
                         ];
 
                         const orderKey =
-                           order.status?.toLowerCase() || "pending";
+                           order.status?.toLowerCase() || "Pending";
                         const idx = steps.findIndex((s) => s.key === orderKey);
                         const activeIndex =
                            idx >= 0
                               ? idx
-                              : orderKey === "cancelled" ||
-                                orderKey === "refunded"
+                              : orderKey === "Cancelled" ||
+                                orderKey === "Refunded"
                               ? -1
                               : 0;
 
@@ -290,7 +294,9 @@ export default function OrderDetailsPage() {
                   <div className="space-y-2 mb-1 pb-6 border-b">
                      <div className="flex justify-between">
                         <span className="text-muted-foreground">Order ID</span>
-                        <span className="font-mono text-sm">{order.id}</span>
+                        <span className="font-mono text-sm">
+                           {order.order_number || order.id}
+                        </span>
                      </div>
                      <div className="flex justify-between">
                         <span className="text-muted-foreground">Date</span>

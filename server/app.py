@@ -4,6 +4,7 @@ from flask_jwt_extended import JWTManager
 from extensions import db, redis_client
 from config import config
 import os
+import paypalrestsdk
 
 def create_app(config_name='development'):
     """Application factory."""
@@ -14,6 +15,13 @@ def create_app(config_name='development'):
     db.init_app(app)
     CORS(app, origins=app.config['CORS_ORIGINS'], supports_credentials=True)
     jwt = JWTManager(app)
+    
+    # Configure PayPal SDK
+    paypalrestsdk.configure({
+        "mode": app.config['PAYPAL_MODE'],
+        "client_id": app.config['PAYPAL_CLIENT_ID'],
+        "client_secret": app.config['PAYPAL_CLIENT_SECRET']
+    })
 
     # JWT error handlers for clearer debugging
     from flask import jsonify
@@ -52,6 +60,7 @@ def create_app(config_name='development'):
     from routes.admin.users import admin_users_bp
     from routes.admin.analytics import admin_analytics_bp
     from routes.orders import orders_bp
+    from routes.payments import payments_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(admin_products_bp, url_prefix='/api/admin/products')
@@ -63,6 +72,7 @@ def create_app(config_name='development'):
     app.register_blueprint(orders_bp, url_prefix='/api/orders')
     app.register_blueprint(admin_users_bp, url_prefix='/api/admin/users')
     app.register_blueprint(admin_analytics_bp, url_prefix='/api/admin/analytics')
+    app.register_blueprint(payments_bp, url_prefix='/api/payments')
     from routes.constants import constants_bp
     app.register_blueprint(constants_bp, url_prefix='/api/constants')
 

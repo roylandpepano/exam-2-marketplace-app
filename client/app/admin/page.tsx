@@ -105,7 +105,7 @@ export default function AdminDashboard() {
                         {stats?.orders?.total || 0}
                      </div>
                      <p className="text-xs text-muted-foreground">
-                        {stats?.orders?.pending || 0} pending
+                        {stats?.orders?.Pending || 0} Pending
                      </p>
                   </CardContent>
                </Card>

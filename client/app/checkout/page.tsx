@@ -1,5 +1,5 @@
 /**
- * Checkout Page
+ * Checkout Page with PayPal Integration
  */
 "use client";
 
@@ -15,17 +15,20 @@ import { useCart } from "@/contexts/CartContext";
 import { formatCurrency } from "@/lib/currency";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Check, ArrowLeft } from "lucide-react";
-import { API_BASE_URL, getToken, api } from "@/lib/api";
+import { Check, ArrowLeft, CreditCard } from "lucide-react";
+import { API_BASE_URL, getToken } from "@/lib/api";
+import { PayPalButtons } from "@paypal/react-paypal-js";
 
 export default function CheckoutPage() {
    const { items, total, clearCart } = useCart();
    const { user, isLoggedIn } = useAuth();
    const router = useRouter();
-   const [billingSame, setBillingSame] = useState(true);
-
+   const [paymentMethod, setPaymentMethod] = useState<"paypal" | "card">(
+      "paypal"
+   );
    const [isProcessing, setIsProcessing] = useState(false);
    const [orderPlaced, setOrderPlaced] = useState(false);
+
    const [formData, setFormData] = useState({
       email: user?.email || "",
       fullName: (() => {
@@ -42,11 +45,6 @@ export default function CheckoutPage() {
       cardNumber: "",
       cardExpiry: "",
       cardCVC: "",
-      billingFullName: "",
-      billingAddress: "",
-      billingCity: "",
-      billingState: "",
-      billingZip: "",
    });
 
    const [taxRate, setTaxRate] = useState(0.1);
@@ -55,10 +53,13 @@ export default function CheckoutPage() {
       let mounted = true;
       (async () => {
          try {
-            const res = await api.getConstants();
-            const c = res.constants || {};
-            if (!mounted) return;
-            setTaxRate(Number(c.tax ?? 0.1));
+            const res = await fetch(`${API_BASE_URL}/api/constants`);
+            if (res.ok) {
+               const data = await res.json();
+               const c = data.constants || {};
+               if (!mounted) return;
+               setTaxRate(Number(c.tax ?? 0.1));
+            }
          } catch {
             // ignore
          }
@@ -102,29 +103,173 @@ export default function CheckoutPage() {
       }));
    };
 
-   const handlePlaceOrder = async (e?: React.SyntheticEvent) => {
-      if (e && typeof e.preventDefault === "function") e.preventDefault();
-
+   const validateShipping = () => {
       if (
          !formData.address ||
          !formData.city ||
          !formData.state ||
-         !formData.zipCode ||
-         !formData.cardNumber
+         !formData.zipCode
       ) {
-         toast.error("Please fill in all fields");
+         toast.error("Please fill in all shipping information");
+         return false;
+      }
+      return true;
+   };
+
+   // PayPal Create Order
+   const createOrder = async () => {
+      if (!validateShipping()) {
+         throw new Error("Invalid shipping information");
+      }
+
+      const tax = total * taxRate;
+      const totalWithTax = total + tax;
+
+      const token = getToken();
+      if (!token) {
+         throw new Error("Not authenticated");
+      }
+
+      const res = await fetch(
+         `${API_BASE_URL}/api/payments/paypal/create-order`,
+         {
+            method: "POST",
+            headers: {
+               "Content-Type": "application/json",
+               Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+               items: items.map((it) => ({
+                  id: it.id,
+                  product_id: it.id,
+                  name: it.name,
+                  image: it.image,
+                  quantity: it.quantity,
+                  unit_price: it.price,
+               })),
+               subtotal: total,
+               tax,
+               shipping_cost: 0,
+               discount: 0,
+               total: totalWithTax,
+               shipping_address: {
+                  fullName: formData.fullName,
+                  address: formData.address,
+                  city: formData.city,
+                  state: formData.state,
+                  zipCode: formData.zipCode,
+               },
+            }),
+         }
+      );
+
+      if (!res.ok) {
+         const error = await res.json();
+         throw new Error(error.error || "Failed to create PayPal order");
+      }
+
+      const data = await res.json();
+      return data.payment_id;
+   };
+
+   // PayPal Approve Order
+   const onApprove = async (data: any) => {
+      setIsProcessing(true);
+      try {
+         const tax = total * taxRate;
+         const totalWithTax = total + tax;
+
+         const token = getToken();
+         if (!token) {
+            throw new Error("Not authenticated");
+         }
+
+         const res = await fetch(
+            `${API_BASE_URL}/api/payments/paypal/capture-order`,
+            {
+               method: "POST",
+               headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+               },
+               body: JSON.stringify({
+                  payment_id: data.paymentID,
+                  payer_id: data.payerID,
+                  order_data: {
+                     items: items.map((it) => ({
+                        id: it.id,
+                        product_id: it.id,
+                        name: it.name,
+                        image: it.image,
+                        quantity: it.quantity,
+                        unit_price: it.price,
+                     })),
+                     subtotal: total,
+                     tax,
+                     shipping_cost: 0,
+                     discount: 0,
+                     total: totalWithTax,
+                     shipping_address: {
+                        fullName: formData.fullName,
+                        address: formData.address,
+                        city: formData.city,
+                        state: formData.state,
+                        zipCode: formData.zipCode,
+                     },
+                  },
+               }),
+            }
+         );
+
+         if (!res.ok) {
+            throw new Error("Failed to capture payment");
+         }
+
+         const result = await res.json();
+
+         // Save to localStorage as backup
+         const order: any = {
+            id: result.order.id || result.order.order_number,
+            order_number: result.order.order_number,
+            ...result.order,
+         };
+         const orders = JSON.parse(localStorage.getItem("orders") || "[]");
+         orders.push(order);
+         localStorage.setItem("orders", JSON.stringify(orders));
+
+         setOrderPlaced(true);
+         clearCart();
+         toast.success("Payment successful! Order placed.");
+
+         setTimeout(() => {
+            router.push(`/orders/${order.order_number || order.id}`);
+         }, 2000);
+      } catch (error: any) {
+         toast.error(error.message || "Payment failed");
+         console.error(error);
+      } finally {
+         setIsProcessing(false);
+      }
+   };
+
+   // Card Payment Handler (Simulated)
+   const handleCardPayment = async (e?: React.SyntheticEvent) => {
+      if (e && typeof e.preventDefault === "function") e.preventDefault();
+
+      if (!validateShipping() || !formData.cardNumber) {
+         toast.error("Please fill in all required fields");
          return;
       }
 
       setIsProcessing(true);
-      const tax = +(total * taxRate);
-      const totalWithTax = +(total + tax);
+      const tax = total * taxRate;
+      const totalWithTax = total + tax;
+
       try {
          // Simulate payment processing
          await new Promise((resolve) => setTimeout(resolve, 2000));
 
-         // Save order to localStorage
-         const order = {
+         const order: any = {
             id: "ORD-" + Date.now(),
             userId: user?.id,
             items,
@@ -134,6 +279,7 @@ export default function CheckoutPage() {
             discount: 0,
             total: totalWithTax,
             status: "Completed",
+            payment_status: "paid",
             shippingAddress: {
                fullName: formData.fullName,
                address: formData.address,
@@ -144,7 +290,7 @@ export default function CheckoutPage() {
             date: new Date().toISOString(),
          };
 
-         // If we have a token, try to save to API as well
+         // Try to save to API
          try {
             const token = getToken();
             if (token) {
@@ -180,17 +326,14 @@ export default function CheckoutPage() {
 
                if (res.ok) {
                   const data = await res.json();
-                  // Use server order id if available
                   if (data?.order?.order_number) {
-                     order.id = data.order.order_number;
+                     order.order_number = data.order.order_number;
+                     order.id = data.order.id || data.order.order_number;
                   }
                }
             }
          } catch (err) {
-            console.warn(
-               "Failed to save order to API, falling back to localStorage",
-               err
-            );
+            console.warn("Failed to save order to API", err);
          }
 
          const orders = JSON.parse(localStorage.getItem("orders") || "[]");
@@ -202,7 +345,7 @@ export default function CheckoutPage() {
          toast.success("Order placed successfully!");
 
          setTimeout(() => {
-            router.push(`/orders/${order.id}`);
+            router.push(`/orders/${order.order_number || order.id}`);
          }, 2000);
       } catch (error) {
          toast.error("Failed to place order");
@@ -278,91 +421,120 @@ export default function CheckoutPage() {
 
          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Checkout Form */}
-            <div className="lg:col-span-2">
-               <motion.form
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  onSubmit={handlePlaceOrder}
-                  className="space-y-4"
-               >
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     {/* Shipping Information */}
-                     <Card className="p-3">
-                        <h2 className="text-lg font-semibold mb-2">
-                           Shipping Information
-                        </h2>
-                        <div className="space-y-3">
-                           <Input
-                              type="email"
-                              name="email"
-                              value={formData.email}
-                              onChange={handleInputChange}
-                              placeholder="Email"
-                              disabled
-                           />
+            <div className="lg:col-span-2 space-y-4">
+               {/* Shipping Information and Payment Method in One Row */}
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Shipping Information */}
+                  <Card className="p-4">
+                     <h2 className="text-lg font-semibold mb-3">
+                        Shipping Information
+                     </h2>
+                     <div className="space-y-3">
+                        <Input
+                           type="email"
+                           name="email"
+                           value={formData.email}
+                           onChange={handleInputChange}
+                           placeholder="Email"
+                           disabled
+                        />
+                        <Input
+                           type="text"
+                           name="fullName"
+                           value={formData.fullName}
+                           onChange={handleInputChange}
+                           placeholder="Full Name"
+                           disabled
+                        />
+                        <Input
+                           type="text"
+                           name="address"
+                           value={formData.address}
+                           onChange={handleInputChange}
+                           placeholder="Street Address"
+                           required
+                        />
+                        <div className="grid grid-cols-2 gap-3">
                            <Input
                               type="text"
-                              name="fullName"
-                              value={formData.fullName}
+                              name="city"
+                              value={formData.city}
                               onChange={handleInputChange}
-                              placeholder="Full Name"
-                              disabled
-                           />
-                           <Input
-                              type="text"
-                              name="address"
-                              value={formData.address}
-                              onChange={handleInputChange}
-                              placeholder="Street Address"
+                              placeholder="City"
                               required
                            />
-                           <div className="grid grid-cols-2 gap-3">
-                              <Input
-                                 type="text"
-                                 name="city"
-                                 value={formData.city}
-                                 onChange={handleInputChange}
-                                 placeholder="City"
-                                 required
-                              />
-                              <Input
-                                 type="text"
-                                 name="state"
-                                 value={formData.state}
-                                 onChange={handleInputChange}
-                                 placeholder="State"
-                                 required
-                              />
-                           </div>
                            <Input
                               type="text"
-                              name="zipCode"
-                              value={formData.zipCode}
+                              name="state"
+                              value={formData.state}
                               onChange={handleInputChange}
-                              placeholder="ZIP Code"
+                              placeholder="State"
                               required
                            />
                         </div>
-                     </Card>
+                        <Input
+                           type="text"
+                           name="zipCode"
+                           value={formData.zipCode}
+                           onChange={handleInputChange}
+                           placeholder="ZIP Code"
+                           required
+                        />
+                     </div>
+                  </Card>
 
-                     {/* Payment Information */}
-                     <Card className="p-3">
-                        <div className="flex items-center gap-2 mb-2">
-                           <input
-                              id="billingSame"
-                              type="checkbox"
-                              checked={billingSame}
-                              onChange={() => setBillingSame((s) => !s)}
-                              className="h-4 w-4 rounded border"
+                  {/* Payment Method Selection */}
+                  <Card className="p-4">
+                     <h2 className="text-lg font-semibold mb-3">
+                        Payment Method
+                     </h2>
+                     <div className="flex gap-3 mb-4">
+                        <button
+                           type="button"
+                           onClick={() => setPaymentMethod("paypal")}
+                           className={`flex-1 p-3 border rounded-lg flex items-center justify-center gap-2 transition ${
+                              paymentMethod === "paypal"
+                                 ? "border-blue-600 bg-blue-50"
+                                 : "border-gray-300"
+                           }`}
+                        >
+                           <span className="font-semibold text-blue-600">
+                              PayPal
+                           </span>
+                        </button>
+                        <button
+                           type="button"
+                           onClick={() => setPaymentMethod("card")}
+                           className={`flex-1 p-3 border rounded-lg flex items-center justify-center gap-2 transition ${
+                              paymentMethod === "card"
+                                 ? "border-blue-600 bg-blue-50"
+                                 : "border-gray-300"
+                           }`}
+                        >
+                           <CreditCard className="h-5 w-5" />
+                           <span className="font-semibold">Card</span>
+                        </button>
+                     </div>
+
+                     {/* PayPal Button */}
+                     {paymentMethod === "paypal" && (
+                        <div className="mt-4">
+                           <PayPalButtons
+                              createOrder={createOrder}
+                              onApprove={onApprove}
+                              onError={(err) => {
+                                 console.error("PayPal error:", err);
+                                 toast.error("PayPal payment failed");
+                              }}
+                              style={{ layout: "vertical" }}
+                              disabled={isProcessing}
                            />
-                           <label htmlFor="billingSame" className="text-sm">
-                              Billing same as shipping
-                           </label>
                         </div>
-                        <h2 className="text-lg font-semibold mb-2">
-                           Payment Information
-                        </h2>
-                        <div className="space-y-3">
+                     )}
+
+                     {/* Card Payment Form */}
+                     {paymentMethod === "card" && (
+                        <div className="space-y-3 mt-4">
                            <Input
                               type="text"
                               name="cardNumber"
@@ -390,56 +562,18 @@ export default function CheckoutPage() {
                                  maxLength={3}
                               />
                            </div>
+                           <Button
+                              size="lg"
+                              className="w-full mt-4"
+                              onClick={handleCardPayment}
+                              disabled={isProcessing}
+                           >
+                              {isProcessing ? "Processing..." : "Pay with Card"}
+                           </Button>
                         </div>
-                     </Card>
-                     {!billingSame && (
-                        <Card className="p-3 md:col-span-2">
-                           <h2 className="text-lg font-semibold mb-2">
-                              Billing Address
-                           </h2>
-                           <div className="space-y-3">
-                              <Input
-                                 type="text"
-                                 name="billingFullName"
-                                 value={formData.billingFullName}
-                                 onChange={handleInputChange}
-                                 placeholder="Full Name"
-                              />
-                              <Input
-                                 type="text"
-                                 name="billingAddress"
-                                 value={formData.billingAddress}
-                                 onChange={handleInputChange}
-                                 placeholder="Street Address"
-                              />
-                              <div className="grid grid-cols-2 gap-3">
-                                 <Input
-                                    type="text"
-                                    name="billingCity"
-                                    value={formData.billingCity}
-                                    onChange={handleInputChange}
-                                    placeholder="City"
-                                 />
-                                 <Input
-                                    type="text"
-                                    name="billingState"
-                                    value={formData.billingState}
-                                    onChange={handleInputChange}
-                                    placeholder="State"
-                                 />
-                              </div>
-                              <Input
-                                 type="text"
-                                 name="billingZip"
-                                 value={formData.billingZip}
-                                 onChange={handleInputChange}
-                                 placeholder="ZIP Code"
-                              />
-                           </div>
-                        </Card>
                      )}
-                  </div>
-               </motion.form>
+                  </Card>
+               </div>
             </div>
 
             {/* Order Summary */}
@@ -500,16 +634,6 @@ export default function CheckoutPage() {
                      <span className="font-bold text-xl text-blue-600">
                         {formatCurrency(total * (1 + taxRate))}
                      </span>
-                  </div>
-                  <div className="mt-4">
-                     <Button
-                        size="lg"
-                        className="w-full"
-                        onClick={handlePlaceOrder}
-                        disabled={isProcessing}
-                     >
-                        {isProcessing ? "Processing..." : "Place Order"}
-                     </Button>
                   </div>
                </Card>
             </motion.div>

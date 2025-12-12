@@ -3,7 +3,7 @@
  */
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ interface OrderItem {
 
 interface Order {
    id: string;
+   order_number?: string;
    userId: string;
    items: OrderItem[];
    total: number;
@@ -40,7 +41,32 @@ interface Order {
 export default function OrdersPage() {
    const { isLoggedIn, user } = useAuth();
    const [orders, setOrders] = useState<Order[]>([]);
+   const [sort, setSort] = useState<string>("newest");
    const [isLoading, setIsLoading] = useState(true);
+
+   const sortedOrders = useMemo(() => {
+      const list = [...orders];
+      switch (sort) {
+         case "oldest":
+            list.sort(
+               (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+            );
+            break;
+         case "total_desc":
+            list.sort((a, b) => b.total - a.total);
+            break;
+         case "total_asc":
+            list.sort((a, b) => a.total - b.total);
+            break;
+         case "newest":
+         default:
+            list.sort(
+               (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+            );
+            break;
+      }
+      return list;
+   }, [orders, sort]);
 
    useEffect(() => {
       setIsLoading(true);
@@ -51,6 +77,9 @@ export default function OrdersPage() {
 
             const mapped = srvOrders.map((srv: any) => ({
                id: String(srv.id),
+               order_number: String(
+                  srv.order_number || srv.order_number || srv.id
+               ),
                userId: String(srv.user_id),
                items: (srv.items || []).map((it: any) => ({
                   id: String(it.id),
@@ -145,80 +174,108 @@ export default function OrdersPage() {
          <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
+            className="mb-6"
          >
-            <h1 className="text-3xl font-bold">Order History</h1>
-            <p className="text-muted-foreground">
-               You have {orders.length} order{orders.length !== 1 ? "s" : ""}
-            </p>
+            <div className="flex items-center justify-between gap-4">
+               <div>
+                  <h1 className="text-2xl font-semibold">Order History</h1>
+                  <p className="text-sm text-muted-foreground">
+                     You have {orders.length} order
+                     {orders.length !== 1 ? "s" : ""}
+                  </p>
+               </div>
+
+               <div className="flex items-center gap-2">
+                  <label className="text-sm text-muted-foreground">Sort:</label>
+                  <select
+                     value={sort}
+                     onChange={(e) => setSort(e.target.value)}
+                     className="text-sm rounded-md border px-2 py-1 bg-white dark:bg-slate-800"
+                  >
+                     <option value="newest">Newest</option>
+                     <option value="oldest">Oldest</option>
+                     <option value="total_desc">Total: High → Low</option>
+                     <option value="total_asc">Total: Low → High</option>
+                  </select>
+               </div>
+            </div>
          </motion.div>
 
          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ staggerChildren: 0.1 }}
-            className="space-y-4"
+            transition={{ staggerChildren: 0.06 }}
+            className="space-y-3"
          >
-            {orders.map((order) => (
+            {sortedOrders.map((order) => (
                <motion.div
-                  key={order.id}
-                  initial={{ opacity: 0, y: 10 }}
+                  key={order.order_number || order.id}
+                  initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                >
-                  <Card className="p-6 hover:shadow-lg transition-shadow">
-                     <div className="flex items-start justify-between mb-4">
-                        <div>
-                           <h3 className="text-lg font-semibold">{order.id}</h3>
-                           <p className="text-sm text-muted-foreground">
-                              {new Date(order.date).toLocaleDateString(
-                                 "en-US",
-                                 {
-                                    year: "numeric",
-                                    month: "long",
-                                    day: "numeric",
-                                 }
+                  <Card className="p-3 hover:shadow transition-shadow">
+                     <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-start gap-3">
+                           <div>
+                              <h3 className="text-sm font-medium">
+                                 {order.order_number || order.id}
+                              </h3>
+                              <p className="text-xs text-muted-foreground">
+                                 {new Date(order.date).toLocaleDateString(
+                                    "en-US",
+                                    {
+                                       year: "numeric",
+                                       month: "short",
+                                       day: "numeric",
+                                    }
+                                 )}
+                              </p>
+                           </div>
+
+                           <div className="hidden sm:block text-xs text-muted-foreground">
+                              {order.items.slice(0, 2).map((item) => (
+                                 <div
+                                    key={item.id}
+                                    className="truncate max-w-xs"
+                                 >
+                                    {item.name} x{item.quantity}
+                                 </div>
+                              ))}
+                              {order.items.length > 2 && (
+                                 <div className="text-xs text-muted-foreground">
+                                    +{order.items.length - 2} more
+                                 </div>
                               )}
-                           </p>
+                           </div>
                         </div>
-                        <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-sm font-semibold">
-                           {order.status}
-                        </span>
-                     </div>
 
-                     <div className="mb-4 pb-4 border-b">
-                        <p className="text-sm text-muted-foreground mb-2">
-                           {order.items.length} item
-                           {order.items.length !== 1 ? "s" : ""}
-                        </p>
-                        <div className="text-sm space-y-1">
-                           {order.items.slice(0, 2).map((item) => (
-                              <p key={item.id}>
-                                 {item.name} x{item.quantity}
-                              </p>
-                           ))}
-                           {order.items.length > 2 && (
-                              <p className="text-muted-foreground">
-                                 +{order.items.length - 2} more
-                              </p>
-                           )}
-                        </div>
-                     </div>
+                        <div className="flex items-center gap-4">
+                           <div className="text-right">
+                              <div className="text-xs text-muted-foreground">
+                                 Total
+                              </div>
+                              <div className="text-base font-semibold text-blue-600">
+                                 {formatCurrency(order.total)}
+                              </div>
+                           </div>
 
-                     <div className="flex items-center justify-between">
-                        <div>
-                           <p className="text-sm text-muted-foreground mb-1">
-                              Total
-                           </p>
-                           <p className="text-2xl font-bold text-blue-600">
-                              {formatCurrency(order.total)}
-                           </p>
+                           <div className="flex flex-col items-end">
+                              <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs font-semibold">
+                                 {order.status}
+                              </span>
+                              <Link
+                                 href={`/orders/${
+                                    order.order_number || order.id
+                                 }`}
+                                 className="mt-2"
+                              >
+                                 <Button size="sm" className="gap-1">
+                                    View
+                                    <ArrowRight className="h-3 w-3" />
+                                 </Button>
+                              </Link>
+                           </div>
                         </div>
-                        <Link href={`/orders/${order.id}`}>
-                           <Button className="gap-2">
-                              View Details
-                              <ArrowRight className="h-4 w-4" />
-                           </Button>
-                        </Link>
                      </div>
                   </Card>
                </motion.div>

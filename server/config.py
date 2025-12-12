@@ -39,6 +39,12 @@ class Config:
     # Admin
     ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'admin@example.com')
     ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'admin123')
+    
+    # PayPal
+    PAYPAL_MODE = os.getenv('PAYPAL_MODE', 'sandbox')  # 'sandbox' or 'live'
+    PAYPAL_CLIENT_ID = os.getenv('PAYPAL_CLIENT_ID', '')
+    PAYPAL_CLIENT_SECRET = os.getenv('PAYPAL_CLIENT_SECRET', '')
+    CLIENT_URL = os.getenv('CLIENT_URL', 'http://localhost:3000')
 
 
 class DevelopmentConfig(Config):
