@@ -7,7 +7,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Home, ShoppingCart, LogOut, User } from "lucide-react";
+import { Home, ShoppingCart, LogOut, User, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
@@ -79,6 +79,25 @@ export function Navbar() {
                   </motion.div>
                </Link>
 
+               <Link href="/about">
+                  <motion.div
+                     whileHover={{ scale: 1.05 }}
+                     whileTap={{ scale: 0.95 }}
+                  >
+                     <Button
+                        variant="ghost"
+                        className={`gap-2 ${
+                           pathname === "/about"
+                              ? "text-blue-600 dark:text-blue-400"
+                              : ""
+                        }`}
+                     >
+                        <Info className="h-5 w-5" />
+                        <span className="hidden sm:inline">About</span>
+                     </Button>
+                  </motion.div>
+               </Link>
+
                <Link href="/cart">
                   <motion.div
                      whileHover={{ scale: 1.05 }}
@@ -110,7 +129,17 @@ export function Navbar() {
                            </Button>
                         </motion.div>
                      </Link>
-
+                     <Link href="/profile">
+                        <motion.div
+                           whileHover={{ scale: 1.05 }}
+                           whileTap={{ scale: 0.95 }}
+                        >
+                           <Button variant="ghost" className="gap-2">
+                              <User className="h-5 w-5" />
+                              <span className="hidden sm:inline">Profile</span>
+                           </Button>
+                        </motion.div>
+                     </Link>
                      <motion.div
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}

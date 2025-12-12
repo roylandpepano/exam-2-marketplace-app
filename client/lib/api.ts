@@ -334,6 +334,10 @@ class ApiClient {
       return this.request<any>(`/api/admin/orders?${query}`);
    }
 
+   async getMyOrders() {
+      return this.request<any>(`/api/orders/me`);
+   }
+
    async getOrder(id: number) {
       return this.request<any>(`/api/admin/orders/${id}`);
    }
