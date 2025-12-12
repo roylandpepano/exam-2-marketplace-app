@@ -154,20 +154,18 @@ export default function OrderDetailsPage() {
                      {/* Status steps: confirmed -> processing -> shipped -> delivered */}
                      {(() => {
                         const steps = [
-                           { key: "Confirmed", label: "Confirmed" },
-                           { key: "Processing", label: "Processing" },
-                           { key: "Shipped", label: "In Transit" },
-                           { key: "Delivered", label: "Delivered" },
+                           { key: "confirmed", label: "Confirmed" },
+                           { key: "processing", label: "Processing" },
+                           { key: "shipped", label: "In Transit" },
+                           { key: "delivered", label: "Delivered" },
                         ];
 
-                        const orderKey =
-                           order.status?.toLowerCase() || "Pending";
+                        const orderKey = (order.status || "").toLowerCase() || "pending";
                         const idx = steps.findIndex((s) => s.key === orderKey);
                         const activeIndex =
                            idx >= 0
                               ? idx
-                              : orderKey === "Cancelled" ||
-                                orderKey === "Refunded"
+                              : orderKey === "cancelled" || orderKey === "refunded"
                               ? -1
                               : 0;
 
@@ -213,12 +211,12 @@ export default function OrderDetailsPage() {
                                  );
                               })}
 
-                              {order.status === "cancelled" && (
+                              {order.status?.toLowerCase() === "cancelled" && (
                                  <div className="mt-2 text-sm text-red-600">
                                     This order was cancelled.
                                  </div>
                               )}
-                              {order.status === "refunded" && (
+                              {order.status?.toLowerCase() === "refunded" && (
                                  <div className="mt-2 text-sm text-red-600">
                                     This order was refunded.
                                  </div>
