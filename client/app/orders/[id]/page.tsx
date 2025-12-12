@@ -160,12 +160,14 @@ export default function OrderDetailsPage() {
                            { key: "delivered", label: "Delivered" },
                         ];
 
-                        const orderKey = (order.status || "").toLowerCase() || "pending";
+                        const orderKey =
+                           (order.status || "").toLowerCase() || "pending";
                         const idx = steps.findIndex((s) => s.key === orderKey);
                         const activeIndex =
                            idx >= 0
                               ? idx
-                              : orderKey === "cancelled" || orderKey === "refunded"
+                              : orderKey === "cancelled" ||
+                                orderKey === "refunded"
                               ? -1
                               : 0;
 
