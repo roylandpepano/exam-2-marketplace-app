@@ -6,6 +6,14 @@ import { useCallback, useMemo, useState } from "react";
 import { SearchBar } from "@/components/SearchBar";
 import { ProductFilter } from "@/components/ProductFilter";
 import { ProductsGrid } from "@/components/ProductsGrid";
+import {
+   Pagination,
+   PaginationContent,
+   PaginationItem,
+   PaginationLink,
+   PaginationPrevious,
+   PaginationNext,
+} from "@/components/ui/pagination";
 import { api, API_BASE_URL } from "@/lib/api";
 import { Product } from "@/lib/products";
 import { useEffect } from "react";
@@ -18,6 +26,9 @@ export default function Home() {
    const [products, setProducts] = useState<Product[]>([]);
    const [loading, setLoading] = useState(true);
    const [error, setError] = useState<string | null>(null);
+   // Pagination
+   const pageSize = 6;
+   const [currentPage, setCurrentPage] = useState<number>(1);
 
    const handleSearch = useCallback((query: string) => {
       setSearchQuery(query);
@@ -121,6 +132,26 @@ export default function Home() {
       });
    }, [products, searchQuery, selectedCategory, minPrice, maxPrice]);
 
+   const totalPages = Math.max(
+      1,
+      Math.ceil(filteredProducts.length / pageSize)
+   );
+
+   const paginatedProducts = useMemo(() => {
+      const start = (currentPage - 1) * pageSize;
+      return filteredProducts.slice(start, start + pageSize);
+   }, [filteredProducts, currentPage]);
+
+   // Reset to first page when filters/search change
+   useEffect(() => {
+      setCurrentPage(1);
+   }, [searchQuery, selectedCategory, minPrice, maxPrice]);
+
+   // Clamp current page when totalPages changes
+   useEffect(() => {
+      if (currentPage > totalPages) setCurrentPage(1);
+   }, [totalPages]);
+
    return (
       <div className="container mx-auto px-4 py-8">
          {/* Header / Hero */}
@@ -184,7 +215,52 @@ export default function Home() {
                           }${searchQuery ? ` matching "${searchQuery}"` : ""}`}
                   </p>
                </div>
-               <ProductsGrid products={filteredProducts} />
+               <ProductsGrid products={paginatedProducts} />
+
+               {totalPages > 1 && (
+                  <div className="mt-6">
+                     <Pagination>
+                        <PaginationContent>
+                           <PaginationItem>
+                              <PaginationPrevious
+                                 href="#"
+                                 onClick={(e) => {
+                                    e.preventDefault();
+                                    setCurrentPage((p) => Math.max(1, p - 1));
+                                 }}
+                              />
+                           </PaginationItem>
+
+                           {Array.from({ length: totalPages }).map((_, i) => (
+                              <PaginationItem key={i}>
+                                 <PaginationLink
+                                    href="#"
+                                    isActive={currentPage === i + 1}
+                                    onClick={(e) => {
+                                       e.preventDefault();
+                                       setCurrentPage(i + 1);
+                                    }}
+                                 >
+                                    {i + 1}
+                                 </PaginationLink>
+                              </PaginationItem>
+                           ))}
+
+                           <PaginationItem>
+                              <PaginationNext
+                                 href="#"
+                                 onClick={(e) => {
+                                    e.preventDefault();
+                                    setCurrentPage((p) =>
+                                       Math.min(totalPages, p + 1)
+                                    );
+                                 }}
+                              />
+                           </PaginationItem>
+                        </PaginationContent>
+                     </Pagination>
+                  </div>
+               )}
             </div>
          </div>
 
