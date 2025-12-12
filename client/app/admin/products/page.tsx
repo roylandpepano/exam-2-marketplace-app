@@ -61,7 +61,7 @@ export default function ProductsPage() {
          setLoading(true);
          const data = await api.getProducts({
             page,
-            per_page: 20,
+            per_page: 10,
             search,
          });
          setProducts(data.products);
@@ -270,17 +270,17 @@ export default function ProductsPage() {
                      </Table>
                   </div>
 
-                  {total > 20 && (
+                  {total > 10 && (
                      <div className="mt-4 flex items-center justify-between">
                         <p className="text-sm text-muted-foreground">
-                           Showing {(page - 1) * 20 + 1} to{" "}
-                           {Math.min(page * 20, total)} of {total} products
+                           Showing {(page - 1) * 10 + 1} to{" "}
+                           {Math.min(page * 10, total)} of {total} products
                         </p>
                         <div className="flex gap-2">
                            <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => setPage(page - 1)}
+                              onClick={() => setPage(Math.max(1, page - 1))}
                               disabled={page === 1}
                            >
                               Previous
@@ -289,7 +289,7 @@ export default function ProductsPage() {
                               variant="outline"
                               size="sm"
                               onClick={() => setPage(page + 1)}
-                              disabled={page * 20 >= total}
+                              disabled={page * 10 >= total}
                            >
                               Next
                            </Button>

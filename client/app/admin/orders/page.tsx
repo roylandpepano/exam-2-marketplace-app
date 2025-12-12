@@ -35,17 +35,23 @@ export default function OrdersPage() {
    const [orders, setOrders] = useState<any[]>([]);
    const [loading, setLoading] = useState(true);
    const [search, setSearch] = useState("");
+   const [page, setPage] = useState(1);
+   const [total, setTotal] = useState(0);
    const [selectedOrder, setSelectedOrder] = useState<any>(null);
    const [dialogOpen, setDialogOpen] = useState(false);
 
    useEffect(() => {
       loadOrders();
-   }, [search]);
+   }, [search, page]);
+
+   const perPage = 10;
 
    const loadOrders = async () => {
       try {
-         const data = await api.getOrders({ search, per_page: 50 });
+         setLoading(true);
+         const data = await api.getOrders({ search, per_page: perPage, page });
          setOrders(data.orders);
+         setTotal(data.total ?? data.total_count ?? 0);
       } catch (error: any) {
          toast.error(error.message || "Failed to load orders");
       } finally {
@@ -98,7 +104,10 @@ export default function OrdersPage() {
                         <Input
                            placeholder="Search orders..."
                            value={search}
-                           onChange={(e) => setSearch(e.target.value)}
+                           onChange={(e) => {
+                              setSearch(e.target.value);
+                              setPage(1);
+                           }}
                            className="pl-8"
                         />
                      </div>
@@ -174,6 +183,33 @@ export default function OrdersPage() {
                         )}
                      </TableBody>
                   </Table>
+
+                  {total > perPage && (
+                     <div className="mt-4 flex items-center justify-between">
+                        <p className="text-sm text-muted-foreground">
+                           Showing {(page - 1) * perPage + 1} to{" "}
+                           {Math.min(page * perPage, total)} of {total} orders
+                        </p>
+                        <div className="flex gap-2">
+                           <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setPage(Math.max(1, page - 1))}
+                              disabled={page === 1}
+                           >
+                              Previous
+                           </Button>
+                           <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setPage(page + 1)}
+                              disabled={page * perPage >= total}
+                           >
+                              Next
+                           </Button>
+                        </div>
+                     </div>
+                  )}
                </CardContent>
             </Card>
 
