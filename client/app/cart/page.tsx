@@ -292,7 +292,7 @@ export default function CartPage() {
 
                   <div className="space-y-2">
                      {!isLoggedIn && (
-                        <Link href="/login" className="block">
+                        <Link href="/" className="block">
                            <Button
                               className="w-full"
                               size="sm"

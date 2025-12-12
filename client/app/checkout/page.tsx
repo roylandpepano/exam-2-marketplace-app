@@ -82,7 +82,7 @@ export default function CheckoutPage() {
             <p className="text-muted-foreground mb-4">
                Please login to continue with checkout
             </p>
-            <Link href="/login">
+            <Link href="/">
                <Button size="sm">Go to Login</Button>
             </Link>
          </div>
