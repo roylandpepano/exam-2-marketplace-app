@@ -333,6 +333,9 @@ export default function CheckoutPage() {
                      shipping_cost: shippingCost,
                      discount: 0,
                      total: totalWithTax,
+                     // mark the order as paid when using card payment
+                     payment_status: "Paid",
+                     status: "Confirmed",
                      shipping_address: {
                         fullName: formData.fullName,
                         address: formData.address,

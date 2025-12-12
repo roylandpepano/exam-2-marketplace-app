@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from extensions import db
-from models.order import Order, OrderItem
+from models.order import Order, OrderItem, OrderStatus, PaymentStatus
 from models.product import Product
 from models.user import User
 from datetime import datetime
@@ -34,6 +34,9 @@ def create_order():
     order = Order(
         order_number=f"ORD-{int(datetime.utcnow().timestamp())}",
         user_id=user.id,
+        # allow client to provide status/payment_status (e.g., for card payments)
+        status=data.get('status', OrderStatus.PENDING.value),
+        payment_status=data.get('payment_status', PaymentStatus.PENDING.value),
         subtotal=subtotal,
         tax=tax,
         shipping_cost=shipping_cost,
