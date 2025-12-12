@@ -12,6 +12,8 @@ export default function ConstantsPage() {
    const [loading, setLoading] = useState(false);
    const [saving, setSaving] = useState(false);
    const [tax, setTax] = useState(0);
+   const [shippingFee, setShippingFee] = useState(0);
+   const [freeShippingThreshold, setFreeShippingThreshold] = useState(100);
 
    useEffect(() => {
       loadConstants();
@@ -23,6 +25,8 @@ export default function ConstantsPage() {
          const res = await api.getConstants();
          const c = res.constants || {};
          setTax(Number(c.tax || 0));
+         setShippingFee(Number(c.shipping_fee || 0));
+         setFreeShippingThreshold(Number(c.free_shipping_threshold || 100));
       } catch (err: any) {
          toast.error(err.message || "Failed to load constants");
       } finally {
@@ -33,7 +37,11 @@ export default function ConstantsPage() {
    const save = async () => {
       try {
          setSaving(true);
-         await api.updateAdminConstants({ tax });
+         await api.updateAdminConstants({
+            tax,
+            shipping_fee: shippingFee,
+            free_shipping_threshold: freeShippingThreshold,
+         });
          toast.success("Constants updated");
       } catch (err: any) {
          toast.error(err.message || "Failed to save constants");
@@ -64,6 +72,26 @@ export default function ConstantsPage() {
                      <Input
                         value={tax}
                         onChange={(e) => setTax(Number(e.target.value))}
+                        type="number"
+                        step="0.01"
+                        disabled={loading}
+                     />
+
+                     <label className="text-sm">Shipping Fee</label>
+                     <Input
+                        value={shippingFee}
+                        onChange={(e) => setShippingFee(Number(e.target.value))}
+                        type="number"
+                        step="0.01"
+                        disabled={loading}
+                     />
+
+                     <label className="text-sm">Free Shipping Threshold</label>
+                     <Input
+                        value={freeShippingThreshold}
+                        onChange={(e) =>
+                           setFreeShippingThreshold(Number(e.target.value))
+                        }
                         type="number"
                         step="0.01"
                         disabled={loading}

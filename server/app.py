@@ -134,6 +134,24 @@ def seed_default_constants(app):
         _db.session.add(tax)
         _db.session.commit()
         print('Seeded default constant: tax=0.1')
+    # Seed default shipping constants
+    shipping = Constant.query.filter_by(key='shipping_fee').first()
+    if not shipping:
+        shipping = Constant(key='shipping_fee', value=str(5.0))
+        from extensions import db as _db
+
+        _db.session.add(shipping)
+        _db.session.commit()
+        print('Seeded default constant: shipping_fee=5.0')
+
+    free_thr = Constant.query.filter_by(key='free_shipping_threshold').first()
+    if not free_thr:
+        free_thr = Constant(key='free_shipping_threshold', value=str(100))
+        from extensions import db as _db
+
+        _db.session.add(free_thr)
+        _db.session.commit()
+        print('Seeded default constant: free_shipping_threshold=100')
 
 
 if __name__ == '__main__':

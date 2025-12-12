@@ -19,13 +19,10 @@ export default function CartPage() {
    const { items, removeItem, updateQuantity, total, clearCart } = useCart();
    const { isLoggedIn } = useAuth();
 
-   const freeShippingThreshold = 100; // display-only threshold
-   const shippingProgress = Math.min(
-      100,
-      Math.round((total / freeShippingThreshold) * 100)
-   );
-
    const [taxRate, setTaxRate] = useState(0.1);
+   const [shippingFee, setShippingFee] = useState(0);
+   const [freeShippingThresholdState, setFreeShippingThresholdState] =
+      useState(100);
 
    useEffect(() => {
       let mounted = true;
@@ -35,6 +32,10 @@ export default function CartPage() {
             const c = res.constants || {};
             if (!mounted) return;
             setTaxRate(Number(c.tax ?? 0.1));
+            setShippingFee(Number(c.shipping_fee ?? 0));
+            setFreeShippingThresholdState(
+               Number(c.free_shipping_threshold ?? 100)
+            );
          } catch {
             // ignore error and keep default
          }
@@ -45,7 +46,11 @@ export default function CartPage() {
    }, []);
 
    const taxAmount = +(total * taxRate);
-   const totalWithTax = +(total + taxAmount);
+   const shippingCost =
+      total >= (freeShippingThresholdState || 100)
+         ? 0
+         : Number(shippingFee || 0);
+   const totalWithTax = +(total + taxAmount + shippingCost);
 
    if (items.length === 0) {
       return (
@@ -223,7 +228,11 @@ export default function CartPage() {
                         <span className="text-sm text-muted-foreground">
                            Shipping
                         </span>
-                        <span className="text-sm font-medium">Free</span>
+                        <span className="text-sm font-medium">
+                           {shippingCost > 0
+                              ? formatCurrency(shippingCost)
+                              : "Free"}
+                        </span>
                      </div>
 
                      <div className="flex justify-between items-center">
@@ -238,16 +247,36 @@ export default function CartPage() {
                      <div>
                         <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
                            <span>Free shipping progress</span>
-                           <span>{shippingProgress}%</span>
+                           <span>
+                              {Math.min(
+                                 100,
+                                 Math.round(
+                                    (total /
+                                       (freeShippingThresholdState || 100)) *
+                                       100
+                                 )
+                              )}
+                              %
+                           </span>
                         </div>
                         <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
                            <div
                               className="h-2 bg-linear-to-r from-blue-500 to-indigo-600"
-                              style={{ width: `${shippingProgress}%` }}
+                              style={{
+                                 width: `${Math.min(
+                                    100,
+                                    Math.round(
+                                       (total /
+                                          (freeShippingThresholdState || 100)) *
+                                          100
+                                    )
+                                 )}%`,
+                              }}
                            />
                         </div>
                         <p className="text-xs text-muted-foreground mt-2">
-                           Free over {formatCurrency(freeShippingThreshold)}
+                           Free over{" "}
+                           {formatCurrency(freeShippingThresholdState || 100)}
                         </p>
                      </div>
                   </div>

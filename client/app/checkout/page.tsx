@@ -48,6 +48,8 @@ export default function CheckoutPage() {
    });
 
    const [taxRate, setTaxRate] = useState(0.1);
+   const [shippingFee, setShippingFee] = useState(0);
+   const [freeShippingThreshold, setFreeShippingThreshold] = useState(100);
 
    useEffect(() => {
       let mounted = true;
@@ -59,6 +61,10 @@ export default function CheckoutPage() {
                const c = data.constants || {};
                if (!mounted) return;
                setTaxRate(Number(c.tax ?? 0.1));
+               setShippingFee(Number(c.shipping_fee ?? 0));
+               setFreeShippingThreshold(
+                  Number(c.free_shipping_threshold ?? 100)
+               );
             }
          } catch {
             // ignore
@@ -123,7 +129,9 @@ export default function CheckoutPage() {
       }
 
       const tax = total * taxRate;
-      const totalWithTax = total + tax;
+      const shippingCost =
+         total >= (freeShippingThreshold || 100) ? 0 : Number(shippingFee || 0);
+      const totalWithTax = total + tax + shippingCost;
 
       const token = getToken();
       if (!token) {
@@ -149,7 +157,7 @@ export default function CheckoutPage() {
                })),
                subtotal: total,
                tax,
-               shipping_cost: 0,
+               shipping_cost: shippingCost,
                discount: 0,
                total: totalWithTax,
                shipping_address: {
@@ -177,7 +185,11 @@ export default function CheckoutPage() {
       setIsProcessing(true);
       try {
          const tax = total * taxRate;
-         const totalWithTax = total + tax;
+         const shippingCost =
+            total >= (freeShippingThreshold || 100)
+               ? 0
+               : Number(shippingFee || 0);
+         const totalWithTax = total + tax + shippingCost;
 
          const token = getToken();
          if (!token) {
@@ -206,7 +218,7 @@ export default function CheckoutPage() {
                      })),
                      subtotal: total,
                      tax,
-                     shipping_cost: 0,
+                     shipping_cost: shippingCost,
                      discount: 0,
                      total: totalWithTax,
                      shipping_address: {
@@ -252,6 +264,11 @@ export default function CheckoutPage() {
       }
    };
 
+   const shippingCost =
+      total >= (freeShippingThreshold || 100) ? 0 : Number(shippingFee || 0);
+   const tax = total * taxRate;
+   const totalWithShipping = total + tax + shippingCost;
+
    // Card Payment Handler (Simulated)
    const handleCardPayment = async (e?: React.SyntheticEvent) => {
       if (e && typeof e.preventDefault === "function") e.preventDefault();
@@ -263,7 +280,9 @@ export default function CheckoutPage() {
 
       setIsProcessing(true);
       const tax = total * taxRate;
-      const totalWithTax = total + tax;
+      const shippingCost =
+         total >= (freeShippingThreshold || 100) ? 0 : Number(shippingFee || 0);
+      const totalWithTax = total + tax + shippingCost;
 
       try {
          // Simulate payment processing
@@ -275,7 +294,7 @@ export default function CheckoutPage() {
             items,
             subtotal: total,
             tax,
-            shipping_cost: 0,
+            shipping_cost: shippingCost,
             discount: 0,
             total: totalWithTax,
             status: "Completed",
@@ -311,7 +330,7 @@ export default function CheckoutPage() {
                      })),
                      subtotal: total,
                      tax,
-                     shipping_cost: 0,
+                     shipping_cost: shippingCost,
                      discount: 0,
                      total: totalWithTax,
                      shipping_address: {
@@ -518,7 +537,7 @@ export default function CheckoutPage() {
 
                      {/* PayPal Button */}
                      {paymentMethod === "paypal" && (
-                        <div className="mt-4">
+                        <div>
                            <PayPalButtons
                               createOrder={createOrder}
                               onApprove={onApprove}
@@ -534,7 +553,7 @@ export default function CheckoutPage() {
 
                      {/* Card Payment Form */}
                      {paymentMethod === "card" && (
-                        <div className="space-y-3 mt-4">
+                        <div className="space-y-3">
                            <Input
                               type="text"
                               name="cardNumber"
@@ -619,7 +638,11 @@ export default function CheckoutPage() {
                      </div>
                      <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Shipping</span>
-                        <span>Free</span>
+                        <span>
+                           {shippingCost > 0
+                              ? formatCurrency(shippingCost)
+                              : "Free"}
+                        </span>
                      </div>
                      <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">
@@ -632,7 +655,7 @@ export default function CheckoutPage() {
                   <div className="flex justify-between items-center">
                      <span className="font-bold">Total:</span>
                      <span className="font-bold text-xl text-blue-600">
-                        {formatCurrency(total * (1 + taxRate))}
+                        {formatCurrency(totalWithShipping)}
                      </span>
                   </div>
                </Card>
