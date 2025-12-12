@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import Link from "next/link";
+import ForgotPasswordDialog from "@/components/ForgotPasswordDialog";
 import RegisterDialog from "@/components/RegisterDialog";
 
 export function LoginDialog() {
@@ -112,12 +113,13 @@ export function LoginDialog() {
                         />
 
                         <div className="text-right mt-2">
-                           <Link
-                              href="/forgot-password"
-                              className="text-sm underline text-blue-500"
-                           >
-                              Forgot password?
-                           </Link>
+                           <ForgotPasswordDialog
+                              trigger={
+                                 <span className="text-sm underline text-blue-500 cursor-pointer">
+                                    Forgot password?
+                                 </span>
+                              }
+                           />
                         </div>
                      </div>
 
