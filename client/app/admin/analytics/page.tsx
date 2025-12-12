@@ -10,6 +10,7 @@ import {
    Package,
    Users as UsersIcon,
 } from "lucide-react";
+import { formatCurrency } from "@/lib/currency";
 
 export default function AnalyticsPage() {
    const [stats, setStats] = useState<any>(null);
@@ -35,11 +36,7 @@ export default function AnalyticsPage() {
       }
    };
 
-   const formatPrice = (price: number) =>
-      new Intl.NumberFormat("en-US", {
-         style: "currency",
-         currency: "USD",
-      }).format(price);
+   // use formatCurrency (PHP)
 
    if (loading) {
       return (
@@ -69,7 +66,7 @@ export default function AnalyticsPage() {
                   </CardHeader>
                   <CardContent>
                      <div className="text-2xl font-bold">
-                        {formatPrice(stats?.revenue?.recent?.total || 0)}
+                        {formatCurrency(stats?.revenue?.recent?.total || 0)}
                      </div>
                      <p className="text-xs text-muted-foreground">
                         {stats?.revenue?.recent?.order_count || 0} orders
@@ -86,7 +83,7 @@ export default function AnalyticsPage() {
                   </CardHeader>
                   <CardContent>
                      <div className="text-2xl font-bold">
-                        {formatPrice(
+                        {formatCurrency(
                            (stats?.revenue?.recent?.total || 0) /
                               (stats?.revenue?.recent?.order_count || 1)
                         )}
@@ -156,7 +153,7 @@ export default function AnalyticsPage() {
                                        </p>
                                        <p className="text-sm text-muted-foreground">
                                           {product.total_sold} sold •{" "}
-                                          {formatPrice(product.revenue)}
+                                          {formatCurrency(product.revenue)}
                                        </p>
                                     </div>
                                  </div>

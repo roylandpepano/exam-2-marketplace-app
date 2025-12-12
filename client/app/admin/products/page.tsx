@@ -22,16 +22,35 @@ import {
    CardHeader,
    CardTitle,
 } from "@/components/ui/card";
-import { Plus, Search, Pencil, Trash2, Image as ImageIcon } from "lucide-react";
+import {
+   Plus,
+   Search,
+   Pencil,
+   Trash2,
+   Image as ImageIcon,
+   Loader2,
+} from "lucide-react";
 import { toast } from "sonner";
+import { formatCurrency } from "@/lib/currency";
+import {
+   AlertDialog,
+   AlertDialogContent,
+   AlertDialogDescription,
+   AlertDialogFooter,
+   AlertDialogHeader,
+   AlertDialogTitle,
+   AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 
 export default function ProductsPage() {
-   const router = useRouter();
    const [products, setProducts] = useState<any[]>([]);
    const [loading, setLoading] = useState(true);
    const [search, setSearch] = useState("");
    const [page, setPage] = useState(1);
    const [total, setTotal] = useState(0);
+   const [isAlertOpen, setIsAlertOpen] = useState(false);
+   const [deletingId, setDeletingId] = useState<number | null>(null);
+   const [isDeleting, setIsDeleting] = useState(false);
 
    useEffect(() => {
       loadProducts();
@@ -54,24 +73,28 @@ export default function ProductsPage() {
       }
    };
 
-   const handleDelete = async (id: number) => {
-      if (!confirm("Are you sure you want to delete this product?")) return;
+   const handleDelete = (id: number) => {
+      setDeletingId(id);
+      setIsAlertOpen(true);
+   };
 
+   const confirmDelete = async () => {
+      if (deletingId == null) return;
       try {
-         await api.deleteProduct(id);
+         setIsDeleting(true);
+         await api.deleteProduct(deletingId);
          toast.success("Product deleted successfully");
          loadProducts();
       } catch (error: any) {
          toast.error(error.message || "Failed to delete product");
+      } finally {
+         setIsAlertOpen(false);
+         setDeletingId(null);
+         setIsDeleting(false);
       }
    };
 
-   const formatPrice = (price: number) => {
-      return new Intl.NumberFormat("en-US", {
-         style: "currency",
-         currency: "USD",
-      }).format(price);
-   };
+   // use formatCurrency (PHP) for all price displays
 
    return (
       <AdminLayout>
@@ -180,7 +203,7 @@ export default function ProductsPage() {
                                     </TableCell>
                                     <TableCell>{product.sku || "-"}</TableCell>
                                     <TableCell>
-                                       {formatPrice(product.price)}
+                                       {formatCurrency(product.price)}
                                     </TableCell>
                                     <TableCell>
                                        <span
@@ -226,8 +249,17 @@ export default function ProductsPage() {
                                              onClick={() =>
                                                 handleDelete(product.id)
                                              }
+                                             disabled={
+                                                isDeleting &&
+                                                deletingId === product.id
+                                             }
                                           >
-                                             <Trash2 className="h-4 w-4" />
+                                             {isDeleting &&
+                                             deletingId === product.id ? (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                             ) : (
+                                                <Trash2 className="h-4 w-4" />
+                                             )}
                                           </Button>
                                        </div>
                                     </TableCell>
@@ -266,6 +298,40 @@ export default function ProductsPage() {
                   )}
                </CardContent>
             </Card>
+            <AlertDialog
+               open={isAlertOpen}
+               onOpenChange={(open: boolean) => {
+                  setIsAlertOpen(open);
+                  if (!open) setDeletingId(null);
+               }}
+            >
+               <AlertDialogContent>
+                  <AlertDialogHeader>
+                     <AlertDialogTitle>Delete product</AlertDialogTitle>
+                     <AlertDialogDescription>
+                        Are you sure you want to delete this product? This
+                        action cannot be undone.
+                     </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                     <AlertDialogCancel disabled={isDeleting}>
+                        Cancel
+                     </AlertDialogCancel>
+                     <div>
+                        <Button onClick={confirmDelete} disabled={isDeleting}>
+                           {isDeleting ? (
+                              <div className="flex items-center gap-2">
+                                 <Loader2 className="h-4 w-4 animate-spin" />
+                                 Deleting...
+                              </div>
+                           ) : (
+                              "Delete"
+                           )}
+                        </Button>
+                     </div>
+                  </AlertDialogFooter>
+               </AlertDialogContent>
+            </AlertDialog>
          </div>
       </AdminLayout>
    );

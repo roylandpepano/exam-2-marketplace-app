@@ -20,7 +20,16 @@ class Config:
     REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
     
     # Upload
-    UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER', 'uploads')
+    # Default uploads directory: workspace-level `uploads/` (absolute path)
+    _env_upload = os.getenv('UPLOAD_FOLDER')
+    if _env_upload:
+        # If env var provided but is relative, resolve relative to project root
+        if os.path.isabs(_env_upload):
+            UPLOAD_FOLDER = _env_upload
+        else:
+            UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', _env_upload))
+    else:
+        UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'uploads'))
     MAX_CONTENT_LENGTH = int(os.getenv('MAX_CONTENT_LENGTH', 16 * 1024 * 1024))  # 16MB
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
     

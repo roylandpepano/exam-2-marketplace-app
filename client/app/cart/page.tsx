@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useCart } from "@/contexts/CartContext";
+import { formatCurrency } from "@/lib/currency";
 import { useAuth } from "@/contexts/AuthContext";
 import { Trash2, ShoppingBag, ArrowRight } from "lucide-react";
 
@@ -83,7 +84,7 @@ export default function CartPage() {
                                     {item.name}
                                  </h3>
                                  <p className="text-lg font-bold text-blue-600">
-                                    ${item.price.toFixed(2)}
+                                    {formatCurrency(item.price)}
                                  </p>
 
                                  <div className="mt-3 flex items-center gap-2">
@@ -103,8 +104,10 @@ export default function CartPage() {
                                        className="w-16"
                                     />
                                     <span className="text-sm text-muted-foreground">
-                                       Subtotal: $
-                                       {(item.price * item.quantity).toFixed(2)}
+                                       Subtotal:{" "}
+                                       {formatCurrency(
+                                          item.price * item.quantity
+                                       )}
                                     </span>
                                  </div>
                               </div>
@@ -157,7 +160,7 @@ export default function CartPage() {
                   <div className="space-y-3 mb-6 pb-6 border-b">
                      <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Subtotal</span>
-                        <span>${total.toFixed(2)}</span>
+                        <span>{formatCurrency(total)}</span>
                      </div>
                      <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Shipping</span>
@@ -165,14 +168,14 @@ export default function CartPage() {
                      </div>
                      <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Tax</span>
-                        <span>${(total * 0.1).toFixed(2)}</span>
+                        <span>{formatCurrency(total * 0.1)}</span>
                      </div>
                   </div>
 
                   <div className="flex justify-between items-center mb-6">
                      <span className="font-bold text-lg">Total:</span>
                      <span className="font-bold text-2xl text-blue-600">
-                        ${(total * 1.1).toFixed(2)}
+                        {formatCurrency(total * 1.1)}
                      </span>
                   </div>
 

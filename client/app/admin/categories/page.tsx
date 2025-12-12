@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { AdminLayout } from "@/components/AdminLayout";
@@ -21,7 +21,7 @@ import {
    CardHeader,
    CardTitle,
 } from "@/components/ui/card";
-import { Plus, Search, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
    Dialog,
@@ -31,6 +31,15 @@ import {
    DialogHeader,
    DialogTitle,
 } from "@/components/ui/dialog";
+import {
+   AlertDialog,
+   AlertDialogCancel,
+   AlertDialogContent,
+   AlertDialogDescription,
+   AlertDialogFooter,
+   AlertDialogHeader,
+   AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -39,11 +48,29 @@ export default function CategoriesPage() {
    const [loading, setLoading] = useState(true);
    const [dialogOpen, setDialogOpen] = useState(false);
    const [editingCategory, setEditingCategory] = useState<any>(null);
+   const [deleteId, setDeleteId] = useState<number | null>(null);
+   const [alertOpen, setAlertOpen] = useState(false);
    const [formData, setFormData] = useState({ name: "", description: "" });
    const [imageFile, setImageFile] = useState<File | null>(null);
+   const [imagePreview, setImagePreview] = useState<string | null>(null);
+   const previewUrlRef = useRef<string | null>(null);
+   const [saving, setSaving] = useState(false);
+   const [deleting, setDeleting] = useState(false);
 
    useEffect(() => {
       loadCategories();
+   }, []);
+
+   // Cleanup created object URLs on unmount
+   useEffect(() => {
+      return () => {
+         if (previewUrlRef.current) {
+            try {
+               URL.revokeObjectURL(previewUrlRef.current);
+            } catch {}
+            previewUrlRef.current = null;
+         }
+      };
    }, []);
 
    const loadCategories = async () => {
@@ -59,6 +86,7 @@ export default function CategoriesPage() {
 
    const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
+      setSaving(true);
       try {
          const data = new FormData();
          data.append("name", formData.name);
@@ -76,9 +104,12 @@ export default function CategoriesPage() {
          setEditingCategory(null);
          setFormData({ name: "", description: "" });
          setImageFile(null);
+         setImagePreview(null);
          loadCategories();
       } catch (error: any) {
          toast.error(error.message || "Failed to save category");
+      } finally {
+         setSaving(false);
       }
    };
 
@@ -88,17 +119,34 @@ export default function CategoriesPage() {
          name: category.name,
          description: category.description || "",
       });
+      // Clear any previously selected local file, but show existing remote image
+      setImageFile(null);
+      if (category.image_url) {
+         setImagePreview(`${api["baseUrl"]}/${category.image_url}`);
+      } else {
+         setImagePreview(null);
+      }
       setDialogOpen(true);
    };
 
-   const handleDelete = async (id: number) => {
-      if (!confirm("Delete this category?")) return;
+   const handleDelete = (id: number) => {
+      setDeleteId(id);
+      setAlertOpen(true);
+   };
+
+   const confirmDelete = async () => {
+      if (!deleteId) return;
+      setDeleting(true);
       try {
-         await api.deleteCategory(id);
+         await api.deleteCategory(deleteId);
          toast.success("Category deleted");
          loadCategories();
       } catch (error: any) {
          toast.error(error.message || "Failed to delete category");
+      } finally {
+         setDeleting(false);
+         setAlertOpen(false);
+         setDeleteId(null);
       }
    };
 
@@ -117,6 +165,15 @@ export default function CategoriesPage() {
                      setDialogOpen(true);
                      setEditingCategory(null);
                      setFormData({ name: "", description: "" });
+                     // clear any previous selected file/preview
+                     setImageFile(null);
+                     if (previewUrlRef.current) {
+                        try {
+                           URL.revokeObjectURL(previewUrlRef.current);
+                        } catch {}
+                        previewUrlRef.current = null;
+                     }
+                     setImagePreview(null);
                   }}
                >
                   <Plus className="mr-2 h-4 w-4" />
@@ -181,8 +238,15 @@ export default function CategoriesPage() {
                                           size="sm"
                                           variant="outline"
                                           onClick={() => handleDelete(cat.id)}
+                                          disabled={
+                                             deleting && deleteId === cat.id
+                                          }
                                        >
-                                          <Trash2 className="h-4 w-4" />
+                                          {deleting && deleteId === cat.id ? (
+                                             <Loader2 className="h-4 w-4 animate-spin" />
+                                          ) : (
+                                             <Trash2 className="h-4 w-4" />
+                                          )}
                                        </Button>
                                     </div>
                                  </TableCell>
@@ -207,7 +271,9 @@ export default function CategoriesPage() {
                   <form onSubmit={handleSubmit}>
                      <div className="space-y-4 py-4">
                         <div>
-                           <Label htmlFor="name">Name *</Label>
+                           <Label htmlFor="name" className="mb-2">
+                              Name *
+                           </Label>
                            <Input
                               id="name"
                               value={formData.name}
@@ -221,7 +287,9 @@ export default function CategoriesPage() {
                            />
                         </div>
                         <div>
-                           <Label htmlFor="description">Description</Label>
+                           <Label htmlFor="description" className="mb-2">
+                              Description
+                           </Label>
                            <Textarea
                               id="description"
                               value={formData.description}
@@ -234,15 +302,68 @@ export default function CategoriesPage() {
                            />
                         </div>
                         <div>
-                           <Label htmlFor="image">Image</Label>
+                           <Label htmlFor="image" className="mb-2">
+                              Image
+                           </Label>
                            <Input
                               id="image"
                               type="file"
                               accept="image/*"
-                              onChange={(e) =>
-                                 setImageFile(e.target.files?.[0] || null)
-                              }
+                              onChange={(e) => {
+                                 const file = e.target.files?.[0] || null;
+                                 // revoke previous blob URL if we created one
+                                 if (file) {
+                                    if (previewUrlRef.current) {
+                                       try {
+                                          URL.revokeObjectURL(
+                                             previewUrlRef.current
+                                          );
+                                       } catch {}
+                                    }
+                                    const url = URL.createObjectURL(file);
+                                    previewUrlRef.current = url;
+                                    setImagePreview(url);
+                                 } else {
+                                    if (previewUrlRef.current) {
+                                       try {
+                                          URL.revokeObjectURL(
+                                             previewUrlRef.current
+                                          );
+                                       } catch {}
+                                       previewUrlRef.current = null;
+                                    }
+                                    setImagePreview(null);
+                                 }
+                                 setImageFile(file);
+                              }}
                            />
+                           {imagePreview ? (
+                              <div className="mt-2 flex items-center gap-2">
+                                 <img
+                                    src={imagePreview}
+                                    alt="Preview"
+                                    className="h-24 w-24 rounded object-cover border"
+                                 />
+                                 <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => {
+                                       setImageFile(null);
+                                       if (previewUrlRef.current) {
+                                          try {
+                                             URL.revokeObjectURL(
+                                                previewUrlRef.current
+                                             );
+                                          } catch {}
+                                          previewUrlRef.current = null;
+                                       }
+                                       setImagePreview(null);
+                                    }}
+                                 >
+                                    Remove
+                                 </Button>
+                              </div>
+                           ) : null}
                         </div>
                      </div>
                      <DialogFooter>
@@ -250,16 +371,53 @@ export default function CategoriesPage() {
                            type="button"
                            variant="outline"
                            onClick={() => setDialogOpen(false)}
+                           disabled={saving}
                         >
                            Cancel
                         </Button>
-                        <Button type="submit">
-                           {editingCategory ? "Update" : "Create"}
+                        <Button type="submit" disabled={saving}>
+                           {saving
+                              ? editingCategory
+                                 ? "Updating..."
+                                 : "Creating..."
+                              : editingCategory
+                              ? "Update"
+                              : "Create"}
                         </Button>
                      </DialogFooter>
                   </form>
                </DialogContent>
             </Dialog>
+
+            <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
+               <AlertDialogContent>
+                  <AlertDialogHeader>
+                     <AlertDialogTitle>Delete category</AlertDialogTitle>
+                     <AlertDialogDescription>
+                        Are you sure you want to delete category {'"'}
+                        {categories.find((c) => c.id === deleteId)?.name}
+                        {'"'}? This action cannot be undone.
+                     </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                     <AlertDialogCancel disabled={deleting}>
+                        Cancel
+                     </AlertDialogCancel>
+                     <div>
+                        <Button onClick={confirmDelete} disabled={deleting}>
+                           {deleting ? (
+                              <div className="flex items-center gap-2">
+                                 <Loader2 className="h-4 w-4 animate-spin" />
+                                 Deleting...
+                              </div>
+                           ) : (
+                              "Delete"
+                           )}
+                        </Button>
+                     </div>
+                  </AlertDialogFooter>
+               </AlertDialogContent>
+            </AlertDialog>
          </div>
       </AdminLayout>
    );

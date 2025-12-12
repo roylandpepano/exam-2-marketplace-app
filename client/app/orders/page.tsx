@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { formatCurrency } from "@/lib/currency";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { Package, ArrowRight } from "lucide-react";
@@ -180,7 +181,7 @@ export default function OrdersPage() {
                               Total
                            </p>
                            <p className="text-2xl font-bold text-blue-600">
-                              ${order.total.toFixed(2)}
+                              {formatCurrency(order.total)}
                            </p>
                         </div>
                         <Link href={`/orders/${order.id}`}>

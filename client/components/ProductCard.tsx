@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { Product } from "@/lib/products";
+import { formatCurrency } from "@/lib/currency";
 
 interface ProductCardProps {
    product: Product;
@@ -40,7 +41,7 @@ export function ProductCard({ product }: ProductCardProps) {
                   className="object-cover hover:scale-105 transition-transform duration-300"
                />
                <div className="absolute top-2 right-2 bg-white dark:bg-gray-900 rounded-full px-3 py-1 text-sm font-semibold">
-                  ${product.price}
+                  {formatCurrency(product.price)}
                </div>
             </div>
 

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useCart } from "@/contexts/CartContext";
+import { formatCurrency } from "@/lib/currency";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Check, ArrowLeft } from "lucide-react";
@@ -307,7 +308,7 @@ export default function CheckoutPage() {
                                  Qty: {item.quantity}
                               </p>
                               <p className="text-sm font-semibold">
-                                 ${(item.price * item.quantity).toFixed(2)}
+                                 {formatCurrency(item.price * item.quantity)}
                               </p>
                            </div>
                         </div>
@@ -317,7 +318,7 @@ export default function CheckoutPage() {
                   <div className="space-y-2 mb-6 pb-6 border-b">
                      <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Subtotal</span>
-                        <span>${total.toFixed(2)}</span>
+                        <span>{formatCurrency(total)}</span>
                      </div>
                      <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Shipping</span>
@@ -325,14 +326,14 @@ export default function CheckoutPage() {
                      </div>
                      <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Tax (10%)</span>
-                        <span>${(total * 0.1).toFixed(2)}</span>
+                        <span>{formatCurrency(total * 0.1)}</span>
                      </div>
                   </div>
 
                   <div className="flex justify-between items-center">
                      <span className="font-bold">Total:</span>
                      <span className="font-bold text-2xl text-blue-600">
-                        ${(total * 1.1).toFixed(2)}
+                        {formatCurrency(total * 1.1)}
                      </span>
                   </div>
                </Card>

@@ -10,6 +10,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { formatCurrency } from "@/lib/currency";
 import { ArrowLeft, Truck, Check } from "lucide-react";
 
 interface OrderItem {
@@ -158,7 +159,7 @@ export default function OrderDetailsPage() {
                                     Qty: {item.quantity}
                                  </p>
                                  <p className="text-lg font-bold text-blue-600">
-                                    ${(item.price * item.quantity).toFixed(2)}
+                                    {formatCurrency(item.price * item.quantity)}
                                  </p>
                               </div>
                            </div>
@@ -221,7 +222,7 @@ export default function OrderDetailsPage() {
                   <div className="space-y-2 mb-6 pb-6 border-b">
                      <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Items</span>
-                        <span>${(order.total * (10 / 11)).toFixed(2)}</span>
+                        <span>{formatCurrency(order.total * (10 / 11))}</span>
                      </div>
                      <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Shipping</span>
@@ -230,7 +231,9 @@ export default function OrderDetailsPage() {
                      <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Tax</span>
                         <span>
-                           ${(order.total - order.total * (10 / 11)).toFixed(2)}
+                           {formatCurrency(
+                              order.total - order.total * (10 / 11)
+                           )}
                         </span>
                      </div>
                   </div>
@@ -238,7 +241,7 @@ export default function OrderDetailsPage() {
                   <div className="flex justify-between items-center">
                      <span className="font-bold">Total:</span>
                      <span className="font-bold text-2xl text-blue-600">
-                        ${order.total.toFixed(2)}
+                        {formatCurrency(order.total)}
                      </span>
                   </div>
 

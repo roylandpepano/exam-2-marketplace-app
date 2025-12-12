@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/card";
 import { Search, Eye } from "lucide-react";
 import { toast } from "sonner";
+import { formatCurrency } from "@/lib/currency";
 import {
    Dialog,
    DialogContent,
@@ -75,11 +76,7 @@ export default function OrdersPage() {
       }
    };
 
-   const formatPrice = (price: number) =>
-      new Intl.NumberFormat("en-US", {
-         style: "currency",
-         currency: "USD",
-      }).format(price);
+   // use formatCurrency (PHP) for admin order displays
 
    return (
       <AdminLayout>
@@ -140,7 +137,7 @@ export default function OrdersPage() {
                                     {order.user?.email || "Unknown"}
                                  </TableCell>
                                  <TableCell>
-                                    {formatPrice(order.total)}
+                                    {formatCurrency(order.total)}
                                  </TableCell>
                                  <TableCell>
                                     <span className="inline-flex items-center rounded-full px-2 py-1 text-xs bg-blue-50 text-blue-700 capitalize">
@@ -199,7 +196,7 @@ export default function OrdersPage() {
                            <div>
                               <Label>Total</Label>
                               <p className="text-sm font-medium">
-                                 {formatPrice(selectedOrder.total)}
+                                 {formatCurrency(selectedOrder.total)}
                               </p>
                            </div>
                         </div>
@@ -233,7 +230,9 @@ export default function OrdersPage() {
                                     <span>
                                        {item.product_name} x {item.quantity}
                                     </span>
-                                    <span>{formatPrice(item.total_price)}</span>
+                                    <span>
+                                       {formatCurrency(item.total_price)}
+                                    </span>
                                  </div>
                               ))}
                            </div>

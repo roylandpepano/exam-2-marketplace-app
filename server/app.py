@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, send_from_directory
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from extensions import db, redis_client
@@ -55,7 +55,23 @@ def create_app(config_name='development'):
     app.register_blueprint(admin_orders_bp, url_prefix='/api/admin/orders')
     app.register_blueprint(admin_users_bp, url_prefix='/api/admin/users')
     app.register_blueprint(admin_analytics_bp, url_prefix='/api/admin/analytics')
+
+    # Serve product images from uploads/products at /products/<filename>
+    @app.route('/products/<path:filename>')
+    def serve_product_image(filename):
+        # Directory where product images are stored
+        products_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'products')
+        return send_from_directory(products_dir, filename)
     
+    # Serve uploaded files (categories, products, etc.) using their folder name
+    # e.g. /categories/<filename> or /products/<filename>
+    @app.route('/<folder>/<path:filename>')
+    def serve_uploaded_file(folder, filename):
+        # Only serve from existing upload subfolders for safety
+        upload_subdir = os.path.join(app.config['UPLOAD_FOLDER'], folder)
+        if not os.path.isdir(upload_subdir):
+            return "Not found", 404
+        return send_from_directory(upload_subdir, filename)
     # Create tables and seed admin user
     with app.app_context():
         db.create_all()

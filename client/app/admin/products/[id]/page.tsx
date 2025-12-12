@@ -153,7 +153,9 @@ export default function ProductFormPage() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                            <div>
-                              <Label htmlFor="name">Product Name *</Label>
+                              <Label htmlFor="name" className="mb-2">
+                                 Product Name *
+                              </Label>
                               <Input
                                  id="name"
                                  value={formData.name}
@@ -168,7 +170,10 @@ export default function ProductFormPage() {
                            </div>
 
                            <div>
-                              <Label htmlFor="short_description">
+                              <Label
+                                 htmlFor="short_description"
+                                 className="mb-2"
+                              >
                                  Short Description
                               </Label>
                               <Input
@@ -184,7 +189,9 @@ export default function ProductFormPage() {
                            </div>
 
                            <div>
-                              <Label htmlFor="description">Description</Label>
+                              <Label htmlFor="description" className="mb-2">
+                                 Description
+                              </Label>
                               <Textarea
                                  id="description"
                                  rows={6}
@@ -200,7 +207,9 @@ export default function ProductFormPage() {
 
                            <div className="grid gap-4 md:grid-cols-2">
                               <div>
-                                 <Label htmlFor="price">Price *</Label>
+                                 <Label htmlFor="price" className="mb-2">
+                                    Price *
+                                 </Label>
                                  <Input
                                     id="price"
                                     type="number"
@@ -217,7 +226,10 @@ export default function ProductFormPage() {
                               </div>
 
                               <div>
-                                 <Label htmlFor="compare_at_price">
+                                 <Label
+                                    htmlFor="compare_at_price"
+                                    className="mb-2"
+                                 >
                                     Compare at Price
                                  </Label>
                                  <Input
@@ -237,7 +249,9 @@ export default function ProductFormPage() {
 
                            <div className="grid gap-4 md:grid-cols-2">
                               <div>
-                                 <Label htmlFor="sku">SKU</Label>
+                                 <Label htmlFor="sku" className="mb-2">
+                                    SKU
+                                 </Label>
                                  <Input
                                     id="sku"
                                     value={formData.sku}
@@ -251,7 +265,10 @@ export default function ProductFormPage() {
                               </div>
 
                               <div>
-                                 <Label htmlFor="stock_quantity">
+                                 <Label
+                                    htmlFor="stock_quantity"
+                                    className="mb-2"
+                                 >
                                     Stock Quantity
                                  </Label>
                                  <Input
@@ -270,7 +287,9 @@ export default function ProductFormPage() {
 
                            <div className="grid gap-4 md:grid-cols-2">
                               <div>
-                                 <Label htmlFor="category_id">Category</Label>
+                                 <Label htmlFor="category_id" className="mb-2">
+                                    Category
+                                 </Label>
                                  <select
                                     id="category_id"
                                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
@@ -292,7 +311,9 @@ export default function ProductFormPage() {
                               </div>
 
                               <div>
-                                 <Label htmlFor="brand">Brand</Label>
+                                 <Label htmlFor="brand" className="mb-2">
+                                    Brand
+                                 </Label>
                                  <Input
                                     id="brand"
                                     value={formData.brand}
@@ -325,7 +346,7 @@ export default function ProductFormPage() {
                               )}
                               <Label
                                  htmlFor="image"
-                                 className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-8 hover:bg-muted"
+                                 className="mb-2 flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-8 hover:bg-muted"
                               >
                                  <Upload className="h-6 w-6" />
                                  <span>Upload Image</span>
@@ -347,7 +368,9 @@ export default function ProductFormPage() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                            <div className="flex items-center justify-between">
-                              <Label htmlFor="is_active">Active</Label>
+                              <Label htmlFor="is_active" className="mb-2">
+                                 Active
+                              </Label>
                               <input
                                  id="is_active"
                                  type="checkbox"
@@ -363,7 +386,9 @@ export default function ProductFormPage() {
                            </div>
 
                            <div className="flex items-center justify-between">
-                              <Label htmlFor="is_featured">Featured</Label>
+                              <Label htmlFor="is_featured" className="mb-2">
+                                 Featured
+                              </Label>
                               <input
                                  id="is_featured"
                                  type="checkbox"
@@ -379,7 +404,7 @@ export default function ProductFormPage() {
                            </div>
 
                            <div className="flex items-center justify-between">
-                              <Label htmlFor="track_inventory">
+                              <Label htmlFor="track_inventory" className="mb-2">
                                  Track Inventory
                               </Label>
                               <input
