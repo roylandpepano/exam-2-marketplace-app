@@ -11,6 +11,7 @@ import { formatCurrency } from "@/lib/currency";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { Package, ArrowRight } from "lucide-react";
+import { api } from "@/lib/api";
 
 interface OrderItem {
    id: string;
@@ -43,22 +44,50 @@ export default function OrdersPage() {
 
    useEffect(() => {
       setIsLoading(true);
-      try {
-         const allOrders = JSON.parse(localStorage.getItem("orders") || "[]");
-         const userOrders = allOrders.filter(
-            (order: Order) => order.userId === user?.id
-         );
-         setOrders(
-            userOrders.sort(
+      const fetchOrders = async () => {
+         try {
+            const res = await api.getMyOrders();
+            const srvOrders = res?.orders || [];
+
+            const mapped = srvOrders.map((srv: any) => ({
+               id: String(srv.id),
+               userId: String(srv.user_id),
+               items: (srv.items || []).map((it: any) => ({
+                  id: String(it.id),
+                  name: it.product_name || it.name,
+                  price: it.unit_price || it.total_price || 0,
+                  quantity: it.quantity || 1,
+                  image: it.product_image || "",
+               })),
+               total: srv.total || 0,
+               status: srv.status || "",
+               shippingAddress: {
+                  fullName: srv.shipping_address?.name || "",
+                  address: srv.shipping_address?.street || "",
+                  city: srv.shipping_address?.city || "",
+                  state: srv.shipping_address?.state || "",
+                  zipCode: srv.shipping_address?.postal_code || "",
+               },
+               date:
+                  srv.created_at || srv.updated_at || new Date().toISOString(),
+            }));
+
+            // sort newest first
+            mapped.sort(
                (a: Order, b: Order) =>
                   new Date(b.date).getTime() - new Date(a.date).getTime()
-            )
-         );
-      } catch (error) {
-         console.error("Failed to load orders:", error);
-      } finally {
-         setIsLoading(false);
-      }
+            );
+
+            setOrders(mapped);
+         } catch (error) {
+            console.error("Failed to load orders:", error);
+            setOrders([]);
+         } finally {
+            setIsLoading(false);
+         }
+      };
+
+      if (user?.id) fetchOrders();
    }, [user?.id]);
 
    if (!isLoggedIn) {

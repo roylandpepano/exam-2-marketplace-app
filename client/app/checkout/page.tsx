@@ -28,7 +28,13 @@ export default function CheckoutPage() {
    const [orderPlaced, setOrderPlaced] = useState(false);
    const [formData, setFormData] = useState({
       email: user?.email || "",
-      fullName: user?.name || "",
+      fullName: (() => {
+         if (!user) return "";
+         const u: any = user as any;
+         const first = u.first_name ?? u.firstName ?? "";
+         const last = u.last_name ?? u.lastName ?? "";
+         return `${first} ${last}`.trim();
+      })(),
       address: "",
       city: "",
       state: "",

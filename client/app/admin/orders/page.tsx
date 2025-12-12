@@ -202,7 +202,7 @@ export default function OrdersPage() {
                         </div>
 
                         <div>
-                           <Label>Status</Label>
+                           <Label className="mb-2">Status</Label>
                            <select
                               className="flex h-10 w-full rounded-md border px-3 py-2 text-sm"
                               value={selectedOrder.status}
@@ -210,12 +210,12 @@ export default function OrdersPage() {
                                  updateStatus(selectedOrder.id, e.target.value)
                               }
                            >
-                              <option value="pending">Pending</option>
-                              <option value="confirmed">Confirmed</option>
-                              <option value="processing">Processing</option>
-                              <option value="shipped">Shipped</option>
-                              <option value="delivered">Delivered</option>
-                              <option value="cancelled">Cancelled</option>
+                              <option value="Pending">Pending</option>
+                              <option value="Confirmed">Confirmed</option>
+                              <option value="Processing">Processing</option>
+                              <option value="Shipped">Shipped</option>
+                              <option value="Delivered">Delivered</option>
+                              <option value="Cancelled">Cancelled</option>
                            </select>
                         </div>
 
@@ -241,13 +241,31 @@ export default function OrdersPage() {
                         <div>
                            <Label>Shipping Address</Label>
                            <p className="text-sm mt-1">
-                              {selectedOrder.shipping_street}
+                              {selectedOrder.shipping_address?.name ||
+                                 selectedOrder.shipping_name}
+                              {selectedOrder.shipping_address?.name ||
+                              selectedOrder.shipping_name ? (
+                                 <br />
+                              ) : null}
+                              {selectedOrder.shipping_address?.street ||
+                                 selectedOrder.shipping_street}
+                              {selectedOrder.shipping_address?.street ||
+                              selectedOrder.shipping_street ? (
+                                 <br />
+                              ) : null}
+                              {selectedOrder.shipping_address?.city ||
+                                 selectedOrder.shipping_city}
+                              {selectedOrder.shipping_address?.city ||
+                              selectedOrder.shipping_city
+                                 ? ", "
+                                 : ""}
+                              {selectedOrder.shipping_address?.state ||
+                                 selectedOrder.shipping_state}{" "}
+                              {selectedOrder.shipping_address?.postal_code ||
+                                 selectedOrder.shipping_postal_code}
                               <br />
-                              {selectedOrder.shipping_city},{" "}
-                              {selectedOrder.shipping_state}{" "}
-                              {selectedOrder.shipping_postal_code}
-                              <br />
-                              {selectedOrder.shipping_country}
+                              {selectedOrder.shipping_address?.country ||
+                                 selectedOrder.shipping_country}
                            </p>
                         </div>
                      </div>

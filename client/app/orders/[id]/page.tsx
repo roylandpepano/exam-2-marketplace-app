@@ -8,6 +8,7 @@ import { motion } from "motion/react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currency";
@@ -45,15 +46,52 @@ export default function OrderDetailsPage() {
 
    useEffect(() => {
       setIsLoading(true);
-      try {
-         const allOrders = JSON.parse(localStorage.getItem("orders") || "[]");
-         const foundOrder = allOrders.find((o: Order) => o.id === orderId);
-         setOrder(foundOrder || null);
-      } catch (error) {
-         console.error("Failed to load order:", error);
-      } finally {
-         setIsLoading(false);
-      }
+      const fetchOrder = async () => {
+         try {
+            const res = await api.getMyOrders();
+            const allOrders = res?.orders || [];
+            const srv = allOrders.find(
+               (o: any) => String(o.id) === String(orderId)
+            );
+
+            if (!srv) {
+               setOrder(null);
+               return;
+            }
+
+            const mapped: Order = {
+               id: String(srv.id),
+               userId: String(srv.user_id),
+               items: (srv.items || []).map((it: any) => ({
+                  id: String(it.id),
+                  name: it.product_name || it.product_name || it.name,
+                  price: it.unit_price || it.total_price || 0,
+                  quantity: it.quantity || 1,
+                  image: it.product_image || it.product_image || "",
+               })),
+               total: srv.total || 0,
+               status: srv.status || "",
+               shippingAddress: {
+                  fullName: srv.shipping_address?.name || "",
+                  address: srv.shipping_address?.street || "",
+                  city: srv.shipping_address?.city || "",
+                  state: srv.shipping_address?.state || "",
+                  zipCode: srv.shipping_address?.postal_code || "",
+               },
+               date:
+                  srv.created_at || srv.updated_at || new Date().toISOString(),
+            };
+
+            setOrder(mapped);
+         } catch (error) {
+            console.error("Failed to load order:", error);
+            setOrder(null);
+         } finally {
+            setIsLoading(false);
+         }
+      };
+
+      fetchOrder();
    }, [orderId]);
 
    if (isLoading) {
@@ -105,33 +143,85 @@ export default function OrderDetailsPage() {
                >
                   {/* Status Timeline */}
                   <Card className="p-6">
-                     <h3 className="font-semibold text-lg mb-1">
+                     <h3 className="font-semibold text-lg mb-4">
                         Order Status
                      </h3>
-                     <div className="flex items-center gap-4">
-                        <div className="flex items-center justify-center h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30">
-                           <Check className="h-6 w-6 text-green-600 dark:text-green-400" />
-                        </div>
-                        <div>
-                           <p className="font-semibold">Order Confirmed</p>
-                           <p className="text-sm text-muted-foreground">
-                              Order placed on{" "}
-                              {new Date(order.date).toLocaleDateString()}
-                           </p>
-                        </div>
-                     </div>
 
-                     <div className="mt-1 flex items-center gap-4">
-                        <div className="flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30">
-                           <Truck className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <div>
-                           <p className="font-semibold">In Transit</p>
-                           <p className="text-sm text-muted-foreground">
-                              Your order is on its way
-                           </p>
-                        </div>
-                     </div>
+                     {/* Status steps: confirmed -> processing -> shipped -> delivered */}
+                     {(() => {
+                        const steps = [
+                           { key: "confirmed", label: "Confirmed" },
+                           { key: "processing", label: "Processing" },
+                           { key: "shipped", label: "In Transit" },
+                           { key: "delivered", label: "Delivered" },
+                        ];
+
+                        const orderKey =
+                           order.status?.toLowerCase() || "pending";
+                        const idx = steps.findIndex((s) => s.key === orderKey);
+                        const activeIndex =
+                           idx >= 0
+                              ? idx
+                              : orderKey === "cancelled" ||
+                                orderKey === "refunded"
+                              ? -1
+                              : 0;
+
+                        return (
+                           <div className="space-y-4">
+                              {steps.map((s, i) => {
+                                 const completed = i <= activeIndex;
+                                 return (
+                                    <div
+                                       key={s.key}
+                                       className="flex items-center gap-4"
+                                    >
+                                       <div
+                                          className={`flex items-center justify-center h-12 w-12 rounded-full ${
+                                             completed
+                                                ? "bg-green-100 dark:bg-green-900/30"
+                                                : "bg-gray-100 dark:bg-gray-800"
+                                          }`}
+                                       >
+                                          {completed ? (
+                                             <Check className="h-6 w-6 text-green-600 dark:text-green-400" />
+                                          ) : (
+                                             <div className="h-2.5 w-2.5 rounded-full bg-muted-foreground" />
+                                          )}
+                                       </div>
+                                       <div>
+                                          <p className="font-semibold">
+                                             {s.label}
+                                          </p>
+                                          <p className="text-sm text-muted-foreground">
+                                             {s.key === "confirmed"
+                                                ? `Order placed on ${new Date(
+                                                     order.date
+                                                  ).toLocaleDateString()}`
+                                                : s.key === "shipped"
+                                                ? "Your order is on its way"
+                                                : s.key === "delivered"
+                                                ? "Order delivered"
+                                                : ""}
+                                          </p>
+                                       </div>
+                                    </div>
+                                 );
+                              })}
+
+                              {order.status === "cancelled" && (
+                                 <div className="mt-2 text-sm text-red-600">
+                                    This order was cancelled.
+                                 </div>
+                              )}
+                              {order.status === "refunded" && (
+                                 <div className="mt-2 text-sm text-red-600">
+                                    This order was refunded.
+                                 </div>
+                              )}
+                           </div>
+                        );
+                     })()}
                   </Card>
 
                   {/* Order Items */}

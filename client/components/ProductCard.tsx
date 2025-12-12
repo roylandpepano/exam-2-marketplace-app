@@ -5,7 +5,7 @@
 
 import { motion } from "motion/react";
 import Image from "next/image";
-import { ShoppingCart, Star, Heart } from "lucide-react";
+import { ShoppingCart, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useCart } from "@/contexts/CartContext";
@@ -21,8 +21,6 @@ import {
    DialogHeader,
    DialogTitle,
    DialogDescription,
-   DialogFooter,
-   DialogClose,
 } from "@/components/ui/dialog";
 
 interface ProductCardProps {
@@ -155,15 +153,8 @@ export function ProductCard({ product }: ProductCardProps) {
       }
    };
 
-   // note: keep `localUserRating` initialized from `product.your_rating` and
-   // update it only when the user submits a rating. Avoid extra effects to
-   // prevent unnecessary re-renders.
-
    const [open, setOpen] = useState(false);
 
-   // Compute the effective user rating for display. Prefer optimistic
-   // `localUserRating` (set when user submits a rating), fall back to the
-   // server-provided `your_rating`, then to per-user stored value in localStorage.
    const computedUserRating =
       localUserRating ??
       (product as unknown as { your_rating?: number }).your_rating ??
@@ -191,7 +182,7 @@ export function ProductCard({ product }: ProductCardProps) {
                   />
                   <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-90 transition-opacity duration-400 pointer-events-none" />
 
-                  <div className="absolute left-3 top-3 bg-amber-50/90 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 rounded-full px-2 py-0.5 text-xs font-semibold shadow-sm backdrop-blur-sm">
+                  <div className="absolute left-3 top-3 bg-amber-50/90 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 rounded-full px-3 py-1 text-lg font-bold shadow-sm backdrop-blur-sm">
                      {formatCurrency(product.price)}
                   </div>
                </div>
@@ -256,7 +247,7 @@ export function ProductCard({ product }: ProductCardProps) {
          <DialogContent showCloseButton={true}>
             <DialogHeader>
                <DialogTitle>{product.name}</DialogTitle>
-               <DialogDescription>
+               <DialogDescription className="text-2xl font-extrabold text-amber-600">
                   {formatCurrency(product.price)}
                </DialogDescription>
             </DialogHeader>
@@ -280,9 +271,6 @@ export function ProductCard({ product }: ProductCardProps) {
                   <div className="flex items-center gap-3">
                      <div className="flex items-center">
                         {(() => {
-                           // Modal: if user is logged in and has rated, show their shaded stars.
-                           // If logged in and hasn't rated, show unshaded stars (encourage rating).
-                           // Guests see the rounded average shaded.
                            const clickable = isLoggedIn;
                            const displayRating = (() => {
                               if (isLoggedIn) {
