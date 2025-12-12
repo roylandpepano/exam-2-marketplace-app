@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
 from models.order import Order, OrderItem, OrderStatus, PaymentStatus
+from models.product import Product
 from models.user import User
 from extensions import db
 from utils.auth import admin_required
@@ -111,11 +112,28 @@ def update_order_status(order_id):
     if new_status not in valid_statuses:
         return jsonify({'error': f'Invalid status. Must be one of: {", ".join(valid_statuses)}'}), 400
     
-    # Update timestamps based on status
+    # Update timestamps based on status and adjust inventory on shipment
     if new_status == OrderStatus.CONFIRMED.value and not order.confirmed_at:
         order.confirmed_at = datetime.utcnow()
     elif new_status == OrderStatus.SHIPPED.value and not order.shipped_at:
         order.shipped_at = datetime.utcnow()
+        # Reduce stock for each order item when order is shipped
+        for item in order.items:
+            product = Product.query.get(item.product_id)
+            if not product:
+                continue
+            if not product.track_inventory:
+                continue
+            try:
+                qty = int(item.quantity or 0)
+            except Exception:
+                qty = 0
+            if product.stock_quantity is None:
+                product.stock_quantity = 0
+            product.stock_quantity = max(product.stock_quantity - qty, 0)
+            # increment sales count
+            product.sales_count = (product.sales_count or 0) + qty
+            db.session.add(product)
     elif new_status == OrderStatus.DELIVERED.value and not order.delivered_at:
         order.delivered_at = datetime.utcnow()
     
