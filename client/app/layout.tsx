@@ -4,7 +4,7 @@ import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
-import { Toaster } from "sonner";
+import ClientToaster from "@/components/ClientToaster";
 
 const geistSans = Geist({
    variable: "--font-geist-sans",
@@ -37,7 +37,7 @@ export default function RootLayout({
                   <main className="min-h-screen bg-gray-50 dark:bg-black">
                      {children}
                   </main>
-                  <Toaster richColors position="top-center" />
+                  <ClientToaster />
                </CartProvider>
             </AuthProvider>
          </body>

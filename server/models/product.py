@@ -48,6 +48,7 @@ class Product(db.Model):
     # Relationships
     category = db.relationship('Category', back_populates='products')
     order_items = db.relationship('OrderItem', back_populates='product')
+    ratings = db.relationship('ProductRating', back_populates='product', cascade='all, delete-orphan')
     
     @property
     def is_in_stock(self):
@@ -97,6 +98,18 @@ class Product(db.Model):
         
         if include_category and self.category:
             data['category'] = self.category.to_dict(include_products=False)
+
+        # Ratings summary (average and count)
+        try:
+            reviews = len(self.ratings) if self.ratings is not None else 0
+            avg = 0.0
+            if reviews > 0:
+                avg = sum([r.rating for r in self.ratings]) / reviews
+            data['rating'] = round(avg, 2)
+            data['reviews'] = reviews
+        except Exception:
+            data['rating'] = 0
+            data['reviews'] = 0
         
         return data
     

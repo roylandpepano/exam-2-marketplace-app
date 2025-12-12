@@ -88,14 +88,27 @@ class ApiClient {
                endpoint.startsWith("/api/auth/logout") ||
                endpoint.startsWith("/api/auth/me");
 
+            // Try to read response body for a descriptive message
+            let parsedBody: any = null;
+            try {
+               const txt = await response.text().catch(() => "");
+               parsedBody = txt ? JSON.parse(txt) : null;
+            } catch (e) {
+               parsedBody = await response.text().catch(() => "");
+            }
+
+            const message =
+               (parsedBody && (parsedBody.error || parsedBody.message)) ||
+               (typeof parsedBody === "string" && parsedBody) ||
+               "Unauthorized";
+
             if (typeof window !== "undefined" && !isAuthEndpoint) {
                window.location.href = "/login";
             }
 
-            const err = new Error("Unauthorized") as Error & {
-               status?: number;
-            };
+            const err: any = new Error(message);
             err.status = 401;
+            err.body = parsedBody;
             throw err;
          }
       }
@@ -216,6 +229,13 @@ class ApiClient {
 
    async getPublicProduct(id: number) {
       return this.request<any>(`/api/products/${id}`);
+   }
+
+   async rateProduct(productId: number, rating: number) {
+      return this.request<any>(`/api/products/${productId}/rate`, {
+         method: "POST",
+         body: JSON.stringify({ rating }),
+      });
    }
 
    // Products

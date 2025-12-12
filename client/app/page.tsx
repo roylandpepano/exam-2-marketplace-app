@@ -45,7 +45,10 @@ export default function Home() {
 
             const mapped: Product[] = items.map(
                (p: Record<string, unknown>) => {
-                  const pp = p as ServerProduct;
+                  const pp = p as ServerProduct & {
+                     rating?: number;
+                     reviews?: number;
+                  };
                   const imageUrl = pp.image_url;
                   const imagesArr = pp.images;
                   const resolvedImage =
@@ -69,11 +72,17 @@ export default function Home() {
                            : pp.category?.name || "Uncategorized",
                      description: pp.short_description || pp.description || "",
                      image: resolvedImage,
-                     rating: Math.min(
-                        5,
-                        Math.max(1, Math.round((viewCount % 5) + 1))
+                     // Prefer server-provided rating/reviews when available
+                     rating:
+                        typeof pp.rating === "number"
+                           ? Number(pp.rating)
+                           : Math.min(
+                                5,
+                                Math.max(1, Math.round((viewCount % 5) + 1))
+                             ),
+                     reviews: Number(
+                        (pp as any).reviews ?? pp.sales_count ?? 0
                      ),
-                     reviews: Number(pp.sales_count || 0),
                   } as Product;
                }
             );
