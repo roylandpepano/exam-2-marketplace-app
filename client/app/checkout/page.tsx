@@ -3,7 +3,7 @@
  */
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -16,6 +16,7 @@ import { formatCurrency } from "@/lib/currency";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Check, ArrowLeft } from "lucide-react";
+import { API_BASE_URL, getToken, api } from "@/lib/api";
 
 export default function CheckoutPage() {
    const { items, total, clearCart } = useCart();
@@ -70,6 +71,25 @@ export default function CheckoutPage() {
       }));
    };
 
+   const [taxRate, setTaxRate] = useState(0.1);
+
+   useEffect(() => {
+      let mounted = true;
+      (async () => {
+         try {
+            const res = await api.getConstants();
+            const c = res.constants || {};
+            if (!mounted) return;
+            setTaxRate(Number(c.tax ?? 0.1));
+         } catch {
+            // ignore
+         }
+      })();
+      return () => {
+         mounted = false;
+      };
+   }, []);
+
    const handlePlaceOrder = async (e: React.FormEvent) => {
       e.preventDefault();
 
@@ -85,16 +105,22 @@ export default function CheckoutPage() {
       }
 
       setIsProcessing(true);
+      const tax = +(total * taxRate);
+      const totalWithTax = +(total + tax);
       try {
          // Simulate payment processing
          await new Promise((resolve) => setTimeout(resolve, 2000));
 
          // Save order to localStorage
-         const order = {
+         const order: any = {
             id: "ORD-" + Date.now(),
             userId: user?.id,
             items,
-            total: total * 1.1,
+            subtotal: total,
+            tax,
+            shipping_cost: 0,
+            discount: 0,
+            total: totalWithTax,
             status: "Completed",
             shippingAddress: {
                fullName: formData.fullName,
@@ -105,6 +131,55 @@ export default function CheckoutPage() {
             },
             date: new Date().toISOString(),
          };
+
+         // If we have a token, try to save to API as well
+         try {
+            const token = getToken();
+            if (token) {
+               const res = await fetch(`${API_BASE_URL}/api/orders`, {
+                  method: "POST",
+                  headers: {
+                     "Content-Type": "application/json",
+                     Authorization: `Bearer ${token}`,
+                  },
+                  body: JSON.stringify({
+                     items: items.map((it) => ({
+                        id: it.id,
+                        product_id: it.id,
+                        name: it.name,
+                        image: it.image,
+                        quantity: it.quantity,
+                        unit_price: it.price,
+                     })),
+                     subtotal: total,
+                     tax,
+                     shipping_cost: 0,
+                     discount: 0,
+                     total: totalWithTax,
+                     shipping_address: {
+                        fullName: formData.fullName,
+                        address: formData.address,
+                        city: formData.city,
+                        state: formData.state,
+                        zipCode: formData.zipCode,
+                     },
+                  }),
+               });
+
+               if (res.ok) {
+                  const data = await res.json();
+                  // Use server order id if available
+                  if (data?.order?.order_number) {
+                     order.id = data.order.order_number;
+                  }
+               }
+            }
+         } catch (err) {
+            console.warn(
+               "Failed to save order to API, falling back to localStorage",
+               err
+            );
+         }
 
          const orders = JSON.parse(localStorage.getItem("orders") || "[]");
          orders.push(order);
@@ -325,7 +400,9 @@ export default function CheckoutPage() {
                         <span>Free</span>
                      </div>
                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Tax (10%)</span>
+                        <span className="text-muted-foreground">
+                           Tax ({(taxRate * 100).toFixed(2)}%)
+                        </span>
                         <span>{formatCurrency(total * 0.1)}</span>
                      </div>
                   </div>

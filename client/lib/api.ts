@@ -162,6 +162,21 @@ class ApiClient {
       return this.request<{ user: any }>("/api/auth/me");
    }
 
+   // Public Products (storefront)
+   async getPublicProducts(params?: Record<string, any>) {
+      const query = new URLSearchParams(params || {}).toString();
+      return this.request<any>(`/api/products?${query}`);
+   }
+
+   async getPublicCategories(params?: Record<string, any>) {
+      const query = new URLSearchParams(params || {}).toString();
+      return this.request<any>(`/api/categories?${query}`);
+   }
+
+   async getPublicProduct(id: number) {
+      return this.request<any>(`/api/products/${id}`);
+   }
+
    // Products
    async getProducts(params?: Record<string, any>) {
       const query = new URLSearchParams(params).toString();
@@ -308,6 +323,22 @@ class ApiClient {
 
    async getUser(id: number) {
       return this.request<any>(`/api/admin/users/${id}`);
+   }
+
+   // Constants
+   async getConstants() {
+      return this.request<any>(`/api/constants`);
+   }
+
+   async getAdminConstants() {
+      return this.request<any>(`/api/admin/constants`);
+   }
+
+   async updateAdminConstants(data: Record<string, any>) {
+      return this.request<any>(`/api/admin/constants`, {
+         method: "PUT",
+         body: JSON.stringify(data),
+      });
    }
 
    async updateUser(id: number, data: any) {

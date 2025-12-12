@@ -10,6 +10,7 @@ import {
    ShoppingCart,
    Users,
    BarChart3,
+   Settings,
    LogOut,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
@@ -59,6 +60,11 @@ const navItems = [
       title: "Analytics",
       href: "/admin/analytics",
       icon: BarChart3,
+   },
+   {
+      title: "Constants",
+      href: "/admin/constants",
+      icon: Settings,
    },
 ];
 

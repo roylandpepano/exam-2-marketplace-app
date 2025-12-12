@@ -4,6 +4,7 @@
  */
 "use client";
 
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { Home, ShoppingCart, LogOut, User } from "lucide-react";
@@ -21,6 +22,13 @@ export function Navbar() {
    const { items } = useCart();
    const router = useRouter();
    const pathname = usePathname();
+
+   const [mounted, setMounted] = useState(false);
+
+   useEffect(() => {
+      const id = window.setTimeout(() => setMounted(true), 0);
+      return () => window.clearTimeout(id);
+   }, []);
 
    if (pathname?.startsWith("/admin")) return null;
 
@@ -81,7 +89,7 @@ export function Navbar() {
                         <ShoppingCart className="h-5 w-5" />
                         <span className="hidden sm:inline">Cart</span>
                      </Button>
-                     {cartCount > 0 && (
+                     {mounted && cartCount > 0 && (
                         <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
                            {cartCount}
                         </span>

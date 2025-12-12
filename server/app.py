@@ -44,17 +44,27 @@ def create_app(config_name='development'):
     # Register blueprints
     from routes.auth import auth_bp
     from routes.admin.products import admin_products_bp
+    from routes.admin.constants import admin_constants_bp
+    from routes.products import products_bp
+    from routes.categories import categories_bp
     from routes.admin.categories import admin_categories_bp
     from routes.admin.orders import admin_orders_bp
     from routes.admin.users import admin_users_bp
     from routes.admin.analytics import admin_analytics_bp
+    from routes.orders import orders_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(admin_products_bp, url_prefix='/api/admin/products')
+    app.register_blueprint(admin_constants_bp, url_prefix='/api/admin/constants')
+    app.register_blueprint(products_bp, url_prefix='/api/products')
+    app.register_blueprint(categories_bp, url_prefix='/api/categories')
     app.register_blueprint(admin_categories_bp, url_prefix='/api/admin/categories')
     app.register_blueprint(admin_orders_bp, url_prefix='/api/admin/orders')
+    app.register_blueprint(orders_bp, url_prefix='/api/orders')
     app.register_blueprint(admin_users_bp, url_prefix='/api/admin/users')
     app.register_blueprint(admin_analytics_bp, url_prefix='/api/admin/analytics')
+    from routes.constants import constants_bp
+    app.register_blueprint(constants_bp, url_prefix='/api/constants')
 
     # Serve product images from uploads/products at /products/<filename>
     @app.route('/products/<path:filename>')
@@ -76,6 +86,7 @@ def create_app(config_name='development'):
     with app.app_context():
         db.create_all()
         seed_admin_user(app)
+        seed_default_constants(app)
     
     return app
 
@@ -99,6 +110,20 @@ def seed_admin_user(app):
         db.session.add(admin)
         db.session.commit()
         print(f'Admin user created: {admin_email}')
+
+
+def seed_default_constants(app):
+    """Seed default constants such as tax if not present."""
+    from models.constant import Constant
+
+    tax = Constant.query.filter_by(key='tax').first()
+    if not tax:
+        tax = Constant(key='tax', value=str(0.1))
+        from extensions import db as _db
+
+        _db.session.add(tax)
+        _db.session.commit()
+        print('Seeded default constant: tax=0.1')
 
 
 if __name__ == '__main__':

@@ -6,7 +6,8 @@
 import { motion } from "motion/react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { CATEGORIES } from "@/lib/products";
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
 
 interface ProductFilterProps {
    selectedCategory: string;
@@ -25,6 +26,34 @@ export function ProductFilter({
    onMinPriceChange,
    onMaxPriceChange,
 }: ProductFilterProps) {
+   const [categories, setCategories] = useState<string[]>([]);
+   const [loading, setLoading] = useState(false);
+
+   useEffect(() => {
+      let mounted = true;
+      const fetchCategories = async () => {
+         setLoading(true);
+         try {
+            const res = await api.getPublicCategories({ per_page: 100 });
+            // Expecting { categories: [...] }
+            if (mounted && res && Array.isArray(res.categories)) {
+               const names = res.categories.map(
+                  (c: { name: string }) => c.name
+               );
+               setCategories(["All", ...names]);
+            }
+         } catch (err) {
+            console.error("Failed to load categories", err);
+         } finally {
+            if (mounted) setLoading(false);
+         }
+      };
+
+      fetchCategories();
+      return () => {
+         mounted = false;
+      };
+   }, []);
    return (
       <motion.div
          initial={{ opacity: 0, x: -20 }}
@@ -38,24 +67,34 @@ export function ProductFilter({
             <div className="mb-6">
                <h4 className="font-medium text-sm mb-3">Category</h4>
                <div className="space-y-2">
-                  {CATEGORIES.map((category) => (
-                     <label
-                        key={category}
-                        className="flex items-center gap-3 cursor-pointer group"
-                     >
-                        <input
-                           type="radio"
-                           name="category"
-                           value={category}
-                           checked={selectedCategory === category}
-                           onChange={(e) => onCategoryChange(e.target.value)}
-                           className="rounded-full"
-                        />
-                        <span className="text-sm group-hover:text-blue-600 transition-colors">
-                           {category}
-                        </span>
-                     </label>
-                  ))}
+                  {loading ? (
+                     <div className="text-sm text-muted-foreground">
+                        Loading...
+                     </div>
+                  ) : (
+                     (categories.length ? categories : ["All"]).map(
+                        (category) => (
+                           <label
+                              key={category}
+                              className="flex items-center gap-3 cursor-pointer group"
+                           >
+                              <input
+                                 type="radio"
+                                 name="category"
+                                 value={category}
+                                 checked={selectedCategory === category}
+                                 onChange={(e) =>
+                                    onCategoryChange(e.target.value)
+                                 }
+                                 className="rounded-full"
+                              />
+                              <span className="text-sm group-hover:text-blue-600 transition-colors">
+                                 {category}
+                              </span>
+                           </label>
+                        )
+                     )
+                  )}
                </div>
             </div>
 
