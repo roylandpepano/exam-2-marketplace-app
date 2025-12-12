@@ -52,18 +52,19 @@ class ApiClient {
       options: RequestInit = {}
    ): Promise<T> {
       const token = getToken();
-      const headers: HeadersInit = {
-         ...options.headers,
-      };
+      // Normalize headers into a Headers instance so we can safely set values
+      const headers = new Headers(options.headers as HeadersInit);
 
       // Add authorization header if token exists
       if (token) {
-         headers.Authorization = `Bearer ${token}`;
+         headers.set("Authorization", `Bearer ${token}`);
       }
 
       // Add Content-Type for JSON requests
       if (options.body && typeof options.body === "string") {
-         headers["Content-Type"] = "application/json";
+         if (!headers.has("Content-Type")) {
+            headers.set("Content-Type", "application/json");
+         }
       }
 
       const response = await fetch(`${this.baseUrl}${endpoint}`, {

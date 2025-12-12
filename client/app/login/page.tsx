@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,7 @@ import { toast } from "sonner";
 
 export default function LoginPage() {
    const router = useRouter();
-   const searchParams = useSearchParams();
+   // We'll read the redirect param directly from window.location when needed
    const { login } = useAuth();
    const [loading, setLoading] = useState(false);
    const [formData, setFormData] = useState({
@@ -34,7 +34,12 @@ export default function LoginPage() {
          const data = await login(formData.email, formData.password);
 
          if (data.user.is_admin) {
-            const redirect = searchParams?.get("redirect") || "/admin";
+            const redirect =
+               (typeof window !== "undefined" &&
+                  new URLSearchParams(window.location.search).get(
+                     "redirect"
+                  )) ||
+               "/admin";
             router.push(redirect);
             toast.success("Welcome back!");
          } else {
