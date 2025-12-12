@@ -105,7 +105,7 @@ export default function OrderDetailsPage() {
                >
                   {/* Status Timeline */}
                   <Card className="p-6">
-                     <h3 className="font-semibold text-lg mb-4">
+                     <h3 className="font-semibold text-lg mb-1">
                         Order Status
                      </h3>
                      <div className="flex items-center gap-4">
@@ -121,7 +121,7 @@ export default function OrderDetailsPage() {
                         </div>
                      </div>
 
-                     <div className="mt-6 flex items-center gap-4">
+                     <div className="mt-1 flex items-center gap-4">
                         <div className="flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30">
                            <Truck className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                         </div>
@@ -136,7 +136,7 @@ export default function OrderDetailsPage() {
 
                   {/* Order Items */}
                   <Card className="p-6">
-                     <h3 className="font-semibold text-lg mb-4">
+                     <h3 className="font-semibold text-lg mb-1">
                         Items Ordered
                      </h3>
                      <div className="space-y-4">
@@ -151,6 +151,7 @@ export default function OrderDetailsPage() {
                                     alt={item.name}
                                     fill
                                     className="object-cover"
+                                    unoptimized
                                  />
                               </div>
                               <div className="flex-1">
@@ -169,7 +170,7 @@ export default function OrderDetailsPage() {
 
                   {/* Shipping Address */}
                   <Card className="p-6">
-                     <h3 className="font-semibold text-lg mb-4">
+                     <h3 className="font-semibold text-lg mb-1">
                         Shipping Address
                      </h3>
                      <div className="text-sm space-y-1">
@@ -196,7 +197,7 @@ export default function OrderDetailsPage() {
                <Card className="p-6 sticky top-24">
                   <h3 className="text-lg font-semibold mb-4">Order Summary</h3>
 
-                  <div className="space-y-2 mb-6 pb-6 border-b">
+                  <div className="space-y-2 mb-1 pb-6 border-b">
                      <div className="flex justify-between">
                         <span className="text-muted-foreground">Order ID</span>
                         <span className="font-mono text-sm">{order.id}</span>
@@ -219,7 +220,7 @@ export default function OrderDetailsPage() {
                      </div>
                   </div>
 
-                  <div className="space-y-2 mb-6 pb-6 border-b">
+                  <div className="space-y-2 mb-1 pb-6 border-b">
                      <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Items</span>
                         <span>{formatCurrency(order.total * (10 / 11))}</span>
@@ -245,7 +246,7 @@ export default function OrderDetailsPage() {
                      </span>
                   </div>
 
-                  <Link href="/" className="block mt-6">
+                  <Link href="/" className="block mt-1">
                      <Button variant="outline" className="w-full">
                         Continue Shopping
                      </Button>

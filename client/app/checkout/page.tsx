@@ -22,6 +22,7 @@ export default function CheckoutPage() {
    const { items, total, clearCart } = useCart();
    const { user, isLoggedIn } = useAuth();
    const router = useRouter();
+   const [billingSame, setBillingSame] = useState(true);
 
    const [isProcessing, setIsProcessing] = useState(false);
    const [orderPlaced, setOrderPlaced] = useState(false);
@@ -35,41 +36,12 @@ export default function CheckoutPage() {
       cardNumber: "",
       cardExpiry: "",
       cardCVC: "",
+      billingFullName: "",
+      billingAddress: "",
+      billingCity: "",
+      billingState: "",
+      billingZip: "",
    });
-
-   if (!isLoggedIn) {
-      return (
-         <div className="container mx-auto px-4 py-12 text-center">
-            <h1 className="text-3xl font-bold mb-4">Checkout</h1>
-            <p className="text-muted-foreground mb-6">
-               Please login to continue with checkout
-            </p>
-            <Link href="/login">
-               <Button size="lg">Go to Login</Button>
-            </Link>
-         </div>
-      );
-   }
-
-   if (items.length === 0) {
-      return (
-         <div className="container mx-auto px-4 py-12 text-center">
-            <h1 className="text-3xl font-bold mb-4">Checkout</h1>
-            <p className="text-muted-foreground mb-6">Your cart is empty</p>
-            <Link href="/">
-               <Button size="lg">Continue Shopping</Button>
-            </Link>
-         </div>
-      );
-   }
-
-   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const { name, value } = e.target;
-      setFormData((prev) => ({
-         ...prev,
-         [name]: value,
-      }));
-   };
 
    const [taxRate, setTaxRate] = useState(0.1);
 
@@ -90,8 +62,42 @@ export default function CheckoutPage() {
       };
    }, []);
 
-   const handlePlaceOrder = async (e: React.FormEvent) => {
-      e.preventDefault();
+   if (!isLoggedIn) {
+      return (
+         <div className="container mx-auto px-4 py-8 text-center">
+            <h1 className="text-2xl font-semibold mb-3">Checkout</h1>
+            <p className="text-muted-foreground mb-4">
+               Please login to continue with checkout
+            </p>
+            <Link href="/login">
+               <Button size="sm">Go to Login</Button>
+            </Link>
+         </div>
+      );
+   }
+
+   if (items.length === 0) {
+      return (
+         <div className="container mx-auto px-4 py-8 text-center">
+            <h1 className="text-2xl font-semibold mb-3">Checkout</h1>
+            <p className="text-muted-foreground mb-4">Your cart is empty</p>
+            <Link href="/">
+               <Button size="sm">Continue Shopping</Button>
+            </Link>
+         </div>
+      );
+   }
+
+   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const { name, value } = e.target;
+      setFormData((prev) => ({
+         ...prev,
+         [name]: value,
+      }));
+   };
+
+   const handlePlaceOrder = async (e?: React.SyntheticEvent) => {
+      if (e && typeof e.preventDefault === "function") e.preventDefault();
 
       if (
          !formData.address ||
@@ -112,7 +118,7 @@ export default function CheckoutPage() {
          await new Promise((resolve) => setTimeout(resolve, 2000));
 
          // Save order to localStorage
-         const order: any = {
+         const order = {
             id: "ORD-" + Date.now(),
             userId: user?.id,
             items,
@@ -202,21 +208,21 @@ export default function CheckoutPage() {
 
    if (orderPlaced) {
       return (
-         <div className="container mx-auto px-4 py-12 text-center">
+         <div className="container mx-auto px-4 py-8 text-center">
             <motion.div
                initial={{ opacity: 0, scale: 0.95 }}
                animate={{ opacity: 1, scale: 1 }}
             >
-               <div className="mb-4 text-6xl">
-                  <Check className="h-16 w-16 text-green-500 mx-auto" />
+               <div className="mb-3 text-4xl">
+                  <Check className="h-12 w-12 text-green-500 mx-auto" />
                </div>
-               <h1 className="text-3xl font-bold mb-2">Order Placed!</h1>
-               <p className="text-muted-foreground mb-8">
+               <h1 className="text-2xl font-semibold mb-2">Order Placed!</h1>
+               <p className="text-muted-foreground mb-4">
                   Thank you for your order. You will be redirected to your order
                   details shortly.
                </p>
                <Link href="/orders">
-                  <Button size="lg">View Your Orders</Button>
+                  <Button size="sm">View Your Orders</Button>
                </Link>
             </motion.div>
          </div>
@@ -224,11 +230,11 @@ export default function CheckoutPage() {
    }
 
    return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-6">
          <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
+            className="mb-4"
          >
             <Link
                href="/cart"
@@ -237,121 +243,196 @@ export default function CheckoutPage() {
                <ArrowLeft className="h-4 w-4" />
                Back to cart
             </Link>
-            <h1 className="text-3xl font-bold">Checkout</h1>
+            <h1 className="text-2xl font-semibold">Checkout</h1>
+            <div className="mt-3">
+               <ol className="flex items-center gap-3 text-xs text-muted-foreground">
+                  <li className="flex items-center gap-2">
+                     <span className="h-5 w-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[11px]">
+                        1
+                     </span>
+                     <span>Cart</span>
+                  </li>
+                  <li className="text-muted-foreground">›</li>
+                  <li className="flex items-center gap-2">
+                     <span className="h-5 w-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[11px]">
+                        2
+                     </span>
+                     <span>Shipping</span>
+                  </li>
+                  <li className="text-muted-foreground">›</li>
+                  <li className="flex items-center gap-2">
+                     <span className="h-5 w-5 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-[11px]">
+                        3
+                     </span>
+                     <span>Payment</span>
+                  </li>
+               </ol>
+            </div>
          </motion.div>
 
-         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Checkout Form */}
             <div className="lg:col-span-2">
                <motion.form
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   onSubmit={handlePlaceOrder}
-                  className="space-y-6"
+                  className="space-y-4"
                >
-                  {/* Shipping Information */}
-                  <Card className="p-6">
-                     <h2 className="text-xl font-semibold mb-4">
-                        Shipping Information
-                     </h2>
-                     <div className="space-y-4">
-                        <Input
-                           type="email"
-                           name="email"
-                           value={formData.email}
-                           onChange={handleInputChange}
-                           placeholder="Email"
-                           disabled
-                        />
-                        <Input
-                           type="text"
-                           name="fullName"
-                           value={formData.fullName}
-                           onChange={handleInputChange}
-                           placeholder="Full Name"
-                           disabled
-                        />
-                        <Input
-                           type="text"
-                           name="address"
-                           value={formData.address}
-                           onChange={handleInputChange}
-                           placeholder="Street Address"
-                           required
-                        />
-                        <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     {/* Shipping Information */}
+                     <Card className="p-3">
+                        <h2 className="text-lg font-semibold mb-2">
+                           Shipping Information
+                        </h2>
+                        <div className="space-y-3">
                            <Input
-                              type="text"
-                              name="city"
-                              value={formData.city}
+                              type="email"
+                              name="email"
+                              value={formData.email}
                               onChange={handleInputChange}
-                              placeholder="City"
-                              required
+                              placeholder="Email"
+                              disabled
                            />
                            <Input
                               type="text"
-                              name="state"
-                              value={formData.state}
+                              name="fullName"
+                              value={formData.fullName}
                               onChange={handleInputChange}
-                              placeholder="State"
+                              placeholder="Full Name"
+                              disabled
+                           />
+                           <Input
+                              type="text"
+                              name="address"
+                              value={formData.address}
+                              onChange={handleInputChange}
+                              placeholder="Street Address"
+                              required
+                           />
+                           <div className="grid grid-cols-2 gap-3">
+                              <Input
+                                 type="text"
+                                 name="city"
+                                 value={formData.city}
+                                 onChange={handleInputChange}
+                                 placeholder="City"
+                                 required
+                              />
+                              <Input
+                                 type="text"
+                                 name="state"
+                                 value={formData.state}
+                                 onChange={handleInputChange}
+                                 placeholder="State"
+                                 required
+                              />
+                           </div>
+                           <Input
+                              type="text"
+                              name="zipCode"
+                              value={formData.zipCode}
+                              onChange={handleInputChange}
+                              placeholder="ZIP Code"
                               required
                            />
                         </div>
-                        <Input
-                           type="text"
-                           name="zipCode"
-                           value={formData.zipCode}
-                           onChange={handleInputChange}
-                           placeholder="ZIP Code"
-                           required
-                        />
-                     </div>
-                  </Card>
+                     </Card>
 
-                  {/* Payment Information */}
-                  <Card className="p-6">
-                     <h2 className="text-xl font-semibold mb-4">
-                        Payment Information
-                     </h2>
-                     <div className="space-y-4">
-                        <Input
-                           type="text"
-                           name="cardNumber"
-                           value={formData.cardNumber}
-                           onChange={handleInputChange}
-                           placeholder="Card Number"
-                           maxLength={16}
-                           required
-                        />
-                        <div className="grid grid-cols-2 gap-4">
-                           <Input
-                              type="text"
-                              name="cardExpiry"
-                              value={formData.cardExpiry}
-                              onChange={handleInputChange}
-                              placeholder="MM/YY"
-                              maxLength={5}
+                     {/* Payment Information */}
+                     <Card className="p-3">
+                        <div className="flex items-center gap-2 mb-2">
+                           <input
+                              id="billingSame"
+                              type="checkbox"
+                              checked={billingSame}
+                              onChange={() => setBillingSame((s) => !s)}
+                              className="h-4 w-4 rounded border"
                            />
-                           <Input
-                              type="text"
-                              name="cardCVC"
-                              value={formData.cardCVC}
-                              onChange={handleInputChange}
-                              placeholder="CVC"
-                              maxLength={3}
-                           />
+                           <label htmlFor="billingSame" className="text-sm">
+                              Billing same as shipping
+                           </label>
                         </div>
-                     </div>
-                  </Card>
-
-                  <Button
-                     type="submit"
-                     className="w-full"
-                     size="lg"
-                     disabled={isProcessing}
-                  >
-                     {isProcessing ? "Processing..." : "Place Order"}
-                  </Button>
+                        <h2 className="text-lg font-semibold mb-2">
+                           Payment Information
+                        </h2>
+                        <div className="space-y-3">
+                           <Input
+                              type="text"
+                              name="cardNumber"
+                              value={formData.cardNumber}
+                              onChange={handleInputChange}
+                              placeholder="Card Number"
+                              maxLength={16}
+                              required
+                           />
+                           <div className="grid grid-cols-2 gap-3">
+                              <Input
+                                 type="text"
+                                 name="cardExpiry"
+                                 value={formData.cardExpiry}
+                                 onChange={handleInputChange}
+                                 placeholder="MM/YY"
+                                 maxLength={5}
+                              />
+                              <Input
+                                 type="text"
+                                 name="cardCVC"
+                                 value={formData.cardCVC}
+                                 onChange={handleInputChange}
+                                 placeholder="CVC"
+                                 maxLength={3}
+                              />
+                           </div>
+                        </div>
+                     </Card>
+                     {!billingSame && (
+                        <Card className="p-3 md:col-span-2">
+                           <h2 className="text-lg font-semibold mb-2">
+                              Billing Address
+                           </h2>
+                           <div className="space-y-3">
+                              <Input
+                                 type="text"
+                                 name="billingFullName"
+                                 value={formData.billingFullName}
+                                 onChange={handleInputChange}
+                                 placeholder="Full Name"
+                              />
+                              <Input
+                                 type="text"
+                                 name="billingAddress"
+                                 value={formData.billingAddress}
+                                 onChange={handleInputChange}
+                                 placeholder="Street Address"
+                              />
+                              <div className="grid grid-cols-2 gap-3">
+                                 <Input
+                                    type="text"
+                                    name="billingCity"
+                                    value={formData.billingCity}
+                                    onChange={handleInputChange}
+                                    placeholder="City"
+                                 />
+                                 <Input
+                                    type="text"
+                                    name="billingState"
+                                    value={formData.billingState}
+                                    onChange={handleInputChange}
+                                    placeholder="State"
+                                 />
+                              </div>
+                              <Input
+                                 type="text"
+                                 name="billingZip"
+                                 value={formData.billingZip}
+                                 onChange={handleInputChange}
+                                 placeholder="ZIP Code"
+                              />
+                           </div>
+                        </Card>
+                     )}
+                  </div>
                </motion.form>
             </div>
 
@@ -361,17 +442,18 @@ export default function CheckoutPage() {
                animate={{ opacity: 1, x: 0 }}
                transition={{ duration: 0.3 }}
             >
-               <Card className="p-6 sticky top-24">
-                  <h3 className="text-lg font-semibold mb-4">Order Summary</h3>
+               <Card className="p-4 sticky top-16">
+                  <h3 className="text-md font-semibold mb-3">Order Summary</h3>
 
-                  <div className="space-y-3 max-h-64 overflow-y-auto mb-6 pb-6 border-b">
+                  <div className="space-y-2 max-h-56 overflow-y-auto mb-4 pb-4 border-b">
                      {items.map((item) => (
-                        <div key={item.id} className="flex gap-3">
-                           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded bg-gray-100">
+                        <div key={item.id} className="flex gap-2 items-center">
+                           <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded bg-gray-100">
                               <Image
                                  src={item.image}
                                  alt={item.name}
                                  fill
+                                 unoptimized
                                  className="object-cover"
                               />
                            </div>
@@ -403,15 +485,25 @@ export default function CheckoutPage() {
                         <span className="text-muted-foreground">
                            Tax ({(taxRate * 100).toFixed(2)}%)
                         </span>
-                        <span>{formatCurrency(total * 0.1)}</span>
+                        <span>{formatCurrency(total * taxRate)}</span>
                      </div>
                   </div>
 
                   <div className="flex justify-between items-center">
                      <span className="font-bold">Total:</span>
-                     <span className="font-bold text-2xl text-blue-600">
-                        {formatCurrency(total * 1.1)}
+                     <span className="font-bold text-xl text-blue-600">
+                        {formatCurrency(total * (1 + taxRate))}
                      </span>
+                  </div>
+                  <div className="mt-4">
+                     <Button
+                        size="lg"
+                        className="w-full"
+                        onClick={handlePlaceOrder}
+                        disabled={isProcessing}
+                     >
+                        {isProcessing ? "Processing..." : "Place Order"}
+                     </Button>
                   </div>
                </Card>
             </motion.div>
