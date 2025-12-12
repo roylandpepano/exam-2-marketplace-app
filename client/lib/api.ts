@@ -79,10 +79,24 @@ class ApiClient {
             return this.request(endpoint, options);
          } else {
             clearTokens();
-            if (typeof window !== "undefined") {
+            // Avoid auto-redirect for authentication endpoints so callers
+            // (like the login dialog) can handle the error and redirect as needed.
+            const isAuthEndpoint =
+               endpoint.startsWith("/api/auth/login") ||
+               endpoint.startsWith("/api/auth/register") ||
+               endpoint.startsWith("/api/auth/refresh") ||
+               endpoint.startsWith("/api/auth/logout") ||
+               endpoint.startsWith("/api/auth/me");
+
+            if (typeof window !== "undefined" && !isAuthEndpoint) {
                window.location.href = "/login";
             }
-            throw new Error("Unauthorized");
+
+            const err = new Error("Unauthorized") as Error & {
+               status?: number;
+            };
+            err.status = 401;
+            throw err;
          }
       }
 
@@ -143,6 +157,33 @@ class ApiClient {
       }>("/api/auth/login", {
          method: "POST",
          body: JSON.stringify({ email, password }),
+      });
+
+      setToken(data.access_token);
+      setRefreshToken(data.refresh_token);
+      return data;
+   }
+
+   async register(name: string, email: string, password: string) {
+      // derive username / first/last name from provided name
+      const parts = (name || "").trim().split(" ");
+      const first_name = parts[0] || null;
+      const last_name = parts.length > 1 ? parts.slice(1).join(" ") : null;
+      const username = email.split("@")[0];
+
+      const data = await this.request<{
+         access_token: string;
+         refresh_token: string;
+         user: any;
+      }>("/api/auth/register", {
+         method: "POST",
+         body: JSON.stringify({
+            email,
+            username,
+            password,
+            first_name,
+            last_name,
+         }),
       });
 
       setToken(data.access_token);

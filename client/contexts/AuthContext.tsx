@@ -5,6 +5,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { api } from "@/lib/api";
 
 interface User {
    id: string;
@@ -36,33 +37,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
    }, []);
 
-   const login = async (email: string, _password: string) => {
+   const login = async (email: string, password: string) => {
       setIsLoading(true);
       try {
-         // Simulate API call
-         const mockUser: User = {
-            id: "user_" + Date.now(),
-            email,
-            name: email.split("@")[0],
-         };
-         localStorage.setItem("user", JSON.stringify(mockUser));
-         setUser(mockUser);
+         const data = await api.login(email, password);
+         const u = data.user;
+         if (u) {
+            localStorage.setItem("user", JSON.stringify(u));
+            setUser(u);
+         }
       } finally {
          setIsLoading(false);
       }
    };
 
-   const register = async (name: string, email: string, _password: string) => {
+   const register = async (name: string, email: string, password: string) => {
       setIsLoading(true);
       try {
-         // Simulate API call
-         const mockUser: User = {
-            id: "user_" + Date.now(),
-            email,
-            name,
-         };
-         localStorage.setItem("user", JSON.stringify(mockUser));
-         setUser(mockUser);
+         const data = await api.register(name, email, password);
+         const u = data.user;
+         if (u) {
+            localStorage.setItem("user", JSON.stringify(u));
+            setUser(u);
+         }
       } finally {
          setIsLoading(false);
       }

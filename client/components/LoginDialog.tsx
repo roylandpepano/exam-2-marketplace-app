@@ -34,9 +34,35 @@ export function LoginDialog() {
          toast.success("Logged in successfully!");
          setOpen(false);
          router.refresh();
-      } catch (err) {
+      } catch (err: unknown) {
          console.error(err);
-         toast.error("Failed to login");
+         type ApiError = {
+            status?: number;
+            body?: { error?: string; message?: string } | string;
+            message?: string;
+         };
+         const apiErr = err as ApiError;
+         // Prefer descriptive message from API when available
+         const apiMessage =
+            (typeof apiErr.body === "object" &&
+               apiErr.body &&
+               (apiErr.body as { error?: string; message?: string }).error) ||
+            (typeof apiErr.body === "object" &&
+               apiErr.body &&
+               (apiErr.body as { error?: string; message?: string }).message) ||
+            (typeof apiErr.body === "string" ? apiErr.body : undefined) ||
+            apiErr.message;
+
+         if (
+            apiErr?.status === 401 ||
+            /credential|invalid|unauthor/i.test(apiMessage || "")
+         ) {
+            toast.error("Incorrect email or password");
+         } else if (apiMessage) {
+            toast.error(String(apiMessage));
+         } else {
+            toast.error("Failed to login");
+         }
       } finally {
          setIsLoading(false);
       }
