@@ -1,4 +1,4 @@
-# Marketplace App (Client + Server)
+# ShopEase - Marketplace App (Client + Server)
 
 A full-stack marketplace application consisting of a Next.js client and a Flask server, containerized with Docker. This README documents the full file structure and provides step-by-step setup instructions for development and production.
 
